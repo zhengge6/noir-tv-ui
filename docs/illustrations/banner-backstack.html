@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css">
+<style>
+  .canvas { --w: 1440px; --h: 440px; }
+  .txt { position: absolute; left: 80px; top: 92px; width: 470px; }
+  .lvl { position: absolute; width: 380px; height: 210px; border-radius: 24px; background: linear-gradient(180deg, #18181A, #0B0B0C);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 30px 60px rgba(0,0,0,.6); padding: 22px 24px; box-sizing: border-box; }
+  .lvl .tag { font: 500 15px "Geist Mono", monospace; color: #8C8C8C; }
+  .lvl .tag b { color: #EDEDED; font-weight: 500; }
+  .lvl .bars i { display: block; height: 10px; border-radius: 5px; background: rgba(255,255,255,.08); margin-top: 12px; }
+  .lvl .posters { display: flex; gap: 10px; margin-top: 18px; }
+  .lvl .posters span { width: 54px; height: 80px; border-radius: 10px; background: linear-gradient(160deg, #2b2b33, #0b0b0e); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .top { box-shadow: inset 0 0 0 1px rgba(255,77,87,.55), 0 0 40px rgba(229,9,20,.18), 0 30px 60px rgba(0,0,0,.7); }
+  .url { position: absolute; left: 760px; top: 40px; height: 38px; padding: 0 16px; border-radius: 999px; display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); font: 14px "Geist Mono", monospace; color: #8C8C8C; }
+  .url b { color: #FF4D57; font-weight: 500; }
+  .back { position: absolute; left: 1196px; top: 118px; width: 200px; }
+  .back .k { display: inline-flex; align-items: center; justify-content: center; width: 54px; height: 54px; border-radius: 18px; background: #141416;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color: #EDEDED; font-size: 24px; }
+  .back p { font: 13px/1.7 "Geist Mono", monospace; color: #8C8C8C; margin: 16px 0 0; }
+  .back p b { color: #EDEDED; font-weight: 500; }
+</style></head>
+<body data-out="banner-backstack.png" data-w="1440" data-h="440" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:560px; left:-280px; bottom:-340px; opacity:.32; transform:rotate(180deg)">
+  <div class="txt">
+    <div class="eyebrow">Android WebView</div>
+    <div class="h">Back closes the sheet, not the app.</div>
+    <p class="sub">Every level gets its own <span class="mono" style="color:#CFCFCF">#hash</span> history entry, so hosts that compare URLs pop exactly one level.</p>
+  </div>
+  <div class="url">location.hash <b>#detail</b></div>
+  <div class="lvl" style="left:640px; top:206px; opacity:.55"><div class="tag"><b>home</b> · ""</div><div class="posters"><span></span><span></span><span></span><span></span><span></span></div></div>
+  <div class="lvl" style="left:700px; top:150px; opacity:.8"><div class="tag"><b>library</b> · #lib</div><div class="bars"><i style="width:70%"></i><i style="width:45%"></i></div></div>
+  <div class="lvl top" style="left:760px; top:94px; height:236px; overflow:hidden">
+    <div class="tag"><b>detail sheet</b> · #detail</div>
+    <img src="../../brand/ring.svg" style="position:absolute; right:-70px; bottom:-90px; width:260px; opacity:.95">
+    <div class="bars" style="margin-top:96px"><i style="width:56%; background:rgba(255,255,255,.16)"></i><i style="width:38%"></i></div>
+  </div>
+  <div class="back"><span class="k">&#8592;</span><p><b>system back</b><br>popstate → "lib"<br>sheet closes<br>page stays</p></div>
+</div>
+</body></html>

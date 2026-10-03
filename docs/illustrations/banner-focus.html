@@ -1,0 +1,59 @@
+<!doctype html>
+<html class="tv"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=block">
+<link rel="stylesheet" href="../../packages/core/tokens.css">
+<link rel="stylesheet" href="../../packages/core/noir.css">
+<link rel="stylesheet" href="style.css">
+<script src="art.js"></script>
+<style>
+  html, body { background: #070707; }
+  .canvas { --w: 1440px; --h: 440px; }
+  .txt { position: absolute; left: 80px; top: 96px; width: 440px; }
+  .pad { position: absolute; left: 560px; top: 70px; width: 260px; height: 260px; }
+  .row { position: absolute; left: 880px; top: 56px; display: flex; gap: 22px; align-items: flex-start; }
+  .row .noir-card { width: 150px; min-width: 0; }
+  .row .noir-poster > .ttl { font-size: 16px; }
+  .row .dim-card { opacity: .55; }
+  .hint { position: absolute; left: 560px; top: 352px; width: 260px; text-align: center; font: 13px "Geist Mono", monospace; color: #8C8C8C; }
+  .hint2 { position: absolute; left: 880px; top: 352px; font: 13px "Geist Mono", monospace; color: #8C8C8C; }
+</style></head>
+<body data-out="banner-focus.png" data-w="1440" data-h="440" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:560px; left:-260px; bottom:-330px; opacity:.35; transform:rotate(180deg)">
+  <div class="txt">
+    <div class="eyebrow">TV · D-pad focus</div>
+    <div class="h">Built for the remote.</div>
+    <p class="sub">Arrow keys move focus geometrically and keep the row in view. Rings appear only for remotes and keyboards, never for touch.</p>
+  </div>
+  <svg class="pad" viewBox="0 0 260 260">
+    <defs>
+      <linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B1B1D"/><stop offset="1" stop-color="#0A0A0B"/></linearGradient>
+      <linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8E040B"/><stop offset=".5" stop-color="#E50914"/><stop offset="1" stop-color="#FF5A62"/></linearGradient>
+      <filter id="g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
+    </defs>
+    <rect width="260" height="260" rx="60" fill="url(#t)"/>
+    <rect x=".5" y=".5" width="259" height="259" rx="59.5" fill="none" stroke="#fff" stroke-opacity=".1"/>
+    <!-- four arcs of the D-pad ring; the right one is "pressed" -->
+    <g fill="none" stroke-width="22" stroke-linecap="round">
+      <path d="M 82.6 63.6 A 84 84 0 0 1 177.4 63.6" stroke="#2a2a2e"/>
+      <path d="M 63.6 177.4 A 84 84 0 0 1 63.6 82.6" stroke="#2a2a2e"/>
+      <path d="M 177.4 196.4 A 84 84 0 0 1 82.6 196.4" stroke="#2a2a2e"/>
+      <path d="M 196.4 82.6 A 84 84 0 0 1 196.4 177.4" stroke="#E50914" opacity=".7" filter="url(#g)"/>
+      <path d="M 196.4 82.6 A 84 84 0 0 1 196.4 177.4" stroke="url(#r)"/>
+    </g>
+    <circle cx="130" cy="130" r="40" fill="#141416" stroke="#fff" stroke-opacity=".1"/>
+    <text x="130" y="136" text-anchor="middle" font-family="Inter" font-weight="600" font-size="17" fill="#8C8C8C">OK</text>
+  </svg>
+  <div class="row" id="row"></div>
+  <div class="hint">→ pressed</div>
+  <div class="hint2">focus moves right · row scrolls to keep it in view</div>
+</div>
+<script>
+  var A = NOIR_ART;
+  document.getElementById("row").innerHTML = [5, 1, 10].map(function (i, k) {
+    var bar = i === 1 ? '<span class="noir-badge-bar"><i style="width:40%"></i></span>' : "";
+    return '<button class="noir-card' + (k === 0 ? " dim-card" : "") + '"><span class="noir-poster"><span class="art" style="background:' + A.poster(i) + '"></span><span class="ttl">' + A.TITLES[i] + '</span>' + bar + '</span><span class="noir-card-name">' + A.TITLES[i] + '</span></button>';
+  }).join("");
+  document.querySelectorAll("#row .noir-card")[1].focus();
+</script>
+</body></html>

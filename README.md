@@ -1,9 +1,9 @@
 <p align="center">
   <a href="https://zhengge6.github.io/noir-tv-ui/demo/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="brand/logo-light.svg">
-      <img alt="NOIR TV UI" src="brand/logo-light.svg" width="380">
+      <source media="(prefers-color-scheme: dark)" srcset="brand/readme-logo@2x.png">
+      <source media="(prefers-color-scheme: light)" srcset="brand/readme-logo@2x.png">
+      <img alt="NOIR TV UI" src="brand/readme-logo@2x.png" width="640">
     </picture>
   </a>
 </p>
@@ -179,6 +179,8 @@ A complete app lives in [`examples/vue-vite`](examples/vue-vite) (`npm run dev -
 
 ## Components
 
+<p align="center"><img src="docs/assets/banner-watch-states.png" alt="Poster cards showing the four watch states: none, progress, finished and updated" width="880"></p>
+
 | Component | CSS class | Vanilla | React | Vue |
 |---|---|:---:|:---:|:---:|
 | Top nav with gradient blur and red active pill | `.noir-topbar` `.noir-nav` | ✅ | `NavBar` | `NavBar` |
@@ -197,11 +199,7 @@ A complete app lives in [`examples/vue-vite`](examples/vue-vite) (`npm run dev -
 Props and helper signatures are listed in the [docs](docs/README.md).
 
 <p align="center">
-  <img src="docs/assets/concept-home-mobile.png" alt="Mobile concept" width="250">
-  &nbsp;
-  <img src="docs/assets/demo-sheet-mobile.png" alt="Bottom sheet on a phone" width="250">
-  &nbsp;
-  <img src="docs/assets/demo-manage-mobile.png" alt="Management mode with confirm dialog" width="250">
+  <img src="docs/assets/concept-mobile.png" alt="Three phone screens: home with TOP10, detail bottom sheet, and management mode with a confirm dialog" width="880">
 </p>
 
 ## Design tokens
@@ -231,9 +229,11 @@ Every visual decision is a CSS custom property in [`tokens.css`](packages/core/t
 | `--noir-nav-gradient` / `--noir-nav-blur` / `--noir-nav-mask` | see file | Gradient-blur top nav |
 | `--noir-ease-out` / `--noir-ease-in` | cubic-bezier | Open and close motion |
 
-<p align="center"><img src="docs/assets/concept-design-tokens.png" alt="Design token sheet" width="760"></p>
+<p align="center"><img src="docs/assets/concept-design-tokens.png" alt="Design token sheet: colour swatches, type, radii and controls, TOP10 numerals and focus ring" width="880"></p>
 
 ## TV remote and D-pad focus
+
+<p align="center"><img src="docs/assets/banner-focus.png" alt="A D-pad with the right arrow pressed and a poster row where focus has moved to the next card" width="880"></p>
 
 - `html.tv` (forced) or `html.kbd` (set on the first arrow key, cleared on touch or mouse) turns on focus visuals:
   white double rings on buttons and chips, a 1.08 scale on posters, and a glow on the active nav pill. Touch users never see focus rings.
@@ -246,6 +246,8 @@ Every visual decision is a CSS custom property in [`tokens.css`](packages/core/t
 - In React and Vue, `useDpadFocus({ tv })` installs the same behaviour once per page. Add `?tv=1` to any demo URL to force TV visuals.
 
 ## Android WebView back handling
+
+<p align="center"><img src="docs/assets/banner-backstack.png" alt="Stacked levels home, library and detail sheet; system back pops only the detail sheet" width="880"></p>
 
 Many Android hosts implement the system back gesture for an embedded page roughly like this:
 
@@ -306,6 +308,7 @@ npm install
 npm run build        # packages + examples
 npm run pages        # refresh demo/react and demo/vue for GitHub Pages
 npm run brand        # regenerate brand/*.svg from geometry
+python3 scripts/render-illustrations.py   # re-render docs/assets from docs/illustrations (needs Playwright)
 ```
 
 ## 中文简介

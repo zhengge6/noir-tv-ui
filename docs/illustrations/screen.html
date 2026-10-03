@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOIR screen mock</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=block">
+<link rel="stylesheet" href="../../packages/core/tokens.css">
+<link rel="stylesheet" href="../../packages/core/noir.css">
+<style>
+  html, body { overflow: hidden; }
+  :root { --noir-canvas: #0A0A0A; --noir-surface: #141416; }
+  .noir-brand { display: flex; align-items: center; gap: 10px; }
+  .noir-brand img { display: block; }
+  .noir-hero { height: 64vh; min-height: 0; max-height: none; }
+  .noir-hero-body { bottom: 19%; }
+  .noir-rows { margin-top: -6vh; }
+  .noir-poster > .art { background-size: cover; }
+  .noir-desc { font-size: 15px; color: #a3a3a3; }
+  html.tv .noir-card { width: 12.6vw; }
+  @media (max-width: 599px) {
+    .noir-hero { height: 70vh; }
+    .noir-rows { margin-top: -2vh; }
+    .noir-card { width: 30vw; }
+  }
+</style>
+<script src="art.js"></script>
+</head>
+<body>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search), view = q.get("view") || "home", A = window.NOIR_ART, T = A.TITLES;
+  var phone = innerWidth < 600;
+  function poster(i, extra) {
+    return '<span class="noir-poster"><span class="art" style="background:' + A.poster(i) + '"></span><span class="ttl">' + T[i] + '</span>' + (extra || "") + '</span>';
+  }
+  function badge(i) {
+    return i === 1 ? '<span class="noir-badge-bar"><i style="width:62%"></i></span>'
+      : i === 2 ? '<span class="noir-badge-check">&#10003;</span>'
+      : i === 3 ? '<span class="noir-badge-update">Ep 12 out</span><span class="noir-badge-dot"></span>'
+      : i === 6 ? '<span class="noir-badge-bar"><i style="width:28%"></i></span>' : "";
+  }
+  function card(i, name) { return '<button class="noir-card" data-i="' + i + '">' + poster(i, badge(i)) + '<span class="noir-card-name">' + (name || T[i]) + '</span></button>'; }
+  function row(title, sub, html) { return '<section class="noir-row"><div class="noir-row-title">' + title + (sub ? "<small>" + sub + "</small>" : "") + '</div><div class="noir-row-scroll">' + html + '</div></section>'; }
+  var brandH = phone ? 24 : 26;
+  var nav = '<header class="noir-topbar"><button class="noir-brand" aria-label="NOIR"><img src="../../brand/mark.svg" height="' + (brandH + 8) + '" alt=""><img src="../../brand/wordmark-dark.svg" height="' + Math.round(brandH * .62) + '" alt=""></button>' +
+    '<nav class="noir-nav"><button class="' + (view === "manage" ? "" : "on") + '">Home</button><button>Library</button>' + (phone ? "" : '<button class="noir-dot has">Favorites</button>') + (view === "manage" ? '<button class="on">Mine</button>' : "") + '</nav><div class="noir-spacer"></div>' +
+    '<button class="noir-icon-btn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5l5.5 5.5"></path></svg></button></header>';
+  var hero = '<section class="noir-hero"><div class="noir-hero-bg" style="background:' + A.hero() + '"></div><div class="noir-hero-vig"></div><div class="noir-hero-body">' +
+    '<div class="noir-tag"><b>TOP 10</b><span>No. 1 today</span></div><h1 class="noir-hero-title">Starfarer</h1>' +
+    '<div class="noir-meta"><span class="score">9.6</span><span class="pill">24 episodes</span></div>' +
+    '<p class="noir-desc">A lighthouse keeper decodes a signal from the edge of the map. Invented title, abstract art.</p>' +
+    '<button class="noir-btn play">&#9654; Play</button><button class="noir-btn ghost">&#9432; Details</button></div></section>';
+  var top = "", cont = "", fresh = "";
+  for (var i = 0; i < 10; i++) top += '<div class="noir-card-top' + (i === 9 ? " r10" : "") + '"><span class="rank">' + (i + 1) + '</span>' + card(i) + '</div>';
+  [1, 3, 6, 2, 8, 11].forEach(function (i) { cont += card(i); });
+  for (var j = 6; j < 16; j++) fresh += card(j);
+  var html = nav;
+  if (view === "home" || view === "sheet") {
+    html += '<main>' + hero + '<div class="noir-rows">' + row("TOP10", "today", top) + row("Continue watching", "", cont) + row("New this week", "", fresh) + '</div></main>';
+  }
+  if (view === "sheet") {
+    html += '<div class="noir-modal open"><div class="noir-sheet"><button class="noir-sheet-x">&#10005;</button><div class="noir-sheet-art"><div class="art" style="background:' + A.poster(1).replace(/,linear/, ",linear") + '"></div><div class="fade"></div>' +
+      '<div class="st"><h3>Backlit City</h3><button class="noir-btn play">&#9654; Resume ep 3</button><button class="noir-btn glass on">&#9829; Saved</button></div></div>' +
+      '<div class="noir-sheet-body"><div class="noir-meta"><span class="score">9.1</span><span class="pill">16 episodes</span></div><p>Two couriers race across a city that only exists after midnight. Back closes this sheet, not the app.</p></div></div></div>';
+  }
+  if (view === "manage") {
+    var g = "";
+    [0, 2, 4, 5, 7, 9, 10, 12, 14].forEach(function (i, k) {
+      var on = k === 1 || k === 3 || k === 4;
+      g += '<div class="noir-mitem' + (on ? " on" : "") + '"><button class="noir-card">' + poster(i) + '<span class="noir-card-name">' + T[i] + '</span><span class="noir-mchk">' + (on ? "&#10003;" : "") + '</span></button><button class="noir-mx">&#10005;</button></div>';
+    });
+    html += '<section class="noir-page"><h2>Manage favorites</h2><div class="noir-manage-bar"><button class="noir-chip">Select all</button><button class="noir-chip">Delete selected (3)</button><button class="noir-chip on">Done</button></div>' +
+      '<p class="noir-note">9 favorites · tap to select, × removes one</p><div class="noir-grid">' + g + '</div></section>' +
+      '<div class="noir-confirm"><div class="noir-confirm-box"><p>Delete 3 favorites?</p><button class="noir-btn ghost">Cancel</button><button class="noir-btn danger">Delete</button></div></div>';
+  }
+  if (view === "focus") {
+    document.documentElement.classList.add("tv");
+    var f = ""; for (var k = 0; k < 9; k++) f += card(k + 4);
+    html = '<div style="padding-top:24px">' + row("Continue watching", "", f) + '</div>';
+  }
+  document.body.innerHTML = html;
+  if (view === "focus") { var el = document.querySelectorAll(".noir-card")[2]; el.focus(); }
+  if (view === "home" && q.get("focus")) { document.documentElement.classList.add("tv"); document.querySelectorAll(".noir-row")[0].querySelectorAll(".noir-card")[1].focus(); }
+})();
+</script>
+</body>
+</html>

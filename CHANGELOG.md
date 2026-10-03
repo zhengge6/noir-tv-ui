@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- README header uses the dark NOIR lockup (`brand/readme-logo.png`) in both light and dark mode.
+- All README illustrations redrawn in the brand language (deep black, eclipse ring, rounded tiles): home concept,
+  phone screens, design-token sheet, and new banners for watch states, D-pad focus and the back stack.
+  Their sources are HTML pages in `docs/illustrations`, rendered with `scripts/render-illustrations.py`.
+
+### Fixed
+- `.noir-hero-vig`: the bottom fade now sits above the side vignette, so there is no visible seam where the hero meets the rows.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added

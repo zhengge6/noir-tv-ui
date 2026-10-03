@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css">
+<style>
+  .canvas { --w: 1440px; --h: 900px; }
+  .phone { position: absolute; top: 64px; width: 320px; height: 693px; border-radius: 46px; }
+  .phone iframe { width: 390px; height: 844px; transform: scale(.8205); }
+  .cap { position: absolute; top: 800px; width: 320px; text-align: center; }
+  .cap b { display: block; font-weight: 600; font-size: 19px; color: #EDEDED; letter-spacing: -.2px; margin-top: 8px; }
+  .cap span { font-size: 15px; color: #8C8C8C; }
+</style></head>
+<body data-out="concept-mobile.png" data-w="1440" data-h="900" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:820px; left:310px; top:-120px; opacity:.55">
+  <div class="frame phone" style="left:180px"><iframe src="screen.html?view=home" scrolling="no"></iframe></div>
+  <div class="frame phone" style="left:560px"><iframe src="screen.html?view=sheet" scrolling="no"></iframe></div>
+  <div class="frame phone" style="left:940px"><iframe src="screen.html?view=manage" scrolling="no"></iframe></div>
+  <div class="cap" style="left:180px"><span class="eyebrow">01</span><b>Home</b><span>Hero, TOP10 and watch states</span></div>
+  <div class="cap" style="left:560px"><span class="eyebrow">02</span><b>Detail sheet</b><span>Slides up; system back closes it</span></div>
+  <div class="cap" style="left:940px"><span class="eyebrow">03</span><b>Manage mode</b><span>Multi-select with a focusable confirm</span></div>
+</div>
+</body></html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css">
+<style>
+  .canvas { --w: 1440px; --h: 860px; }
+  .frame { left: 120px; top: 92px; width: 1200px; height: 675px; }
+  .frame iframe { width: 1280px; height: 720px; transform: scale(.9375); }
+  .stand { position: absolute; left: 620px; top: 790px; width: 200px; height: 6px; border-radius: 6px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); }
+  .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(180deg, transparent, rgba(229,9,20,.05)); }
+</style></head>
+<body data-out="concept-home-desktop.png" data-w="1440" data-h="860" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:900px; right:-260px; top:-300px; opacity:.85">
+  <img class="ring" src="../../brand/ring.svg" style="width:520px; left:-250px; bottom:-300px; opacity:.22; transform:rotate(180deg)">
+  <div class="frame"><iframe src="screen.html?view=home" scrolling="no"></iframe></div>
+  <div class="stand"></div>
+  <div class="floor"></div>
+</div>
+</body></html>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="NOIR ring">
+  <title>NOIR ring</title>
+  <defs>
+    <linearGradient id="rg" x1="0.1" y1="0.1" x2="0.9" y2="0.9"><stop offset="0" stop-color="#5e0207"/><stop offset=".55" stop-color="#E50914"/><stop offset="1" stop-color="#FF5A62"/></linearGradient>
+    <mask id="rm" maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="600"><rect width="600" height="600" fill="#fff"/><circle cx="284.03" cy="284.03" r="212" fill="#000"/></mask>
+    <filter id="rb" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <circle cx="300" cy="300" r="236" fill="#E50914" opacity=".34" mask="url(#rm)" filter="url(#rb)"/>
+  <circle cx="300" cy="300" r="236" fill="url(#rg)" mask="url(#rm)"/>
+</svg>

@@ -4,6 +4,8 @@
 |---|---|
 | `logo-dark.svg` | Full lockup for **dark** backgrounds (white wordmark) |
 | `logo-light.svg` | Full lockup for **light** backgrounds (black wordmark) |
+| `readme-logo.png`, `readme-logo@2x.png`, `readme-logo.svg` | README header: the dark lockup on a `#0A0A0A` canvas (1280×400), used in light and dark mode |
+| `ring.svg` | The eclipse ring on its own, the motif used across the README illustrations |
 | `mark.svg` | App icon / favicon. The tile is always dark, so it works on any background |
 | `wordmark-dark.svg`, `wordmark-light.svg` | Wordmark only |
 | `social-preview.svg` / `social-preview.png` | 1280×640 repository social preview |
@@ -27,5 +29,8 @@ rsvg-convert -z 2 brand/logo-dark.svg -o brand/png/logo-dark.png
 ```
 
 `social-preview.svg` uses the Inter and Geist Mono fonts for its text. Install them before rendering, or use the committed PNG.
+
+README illustrations live in [`docs/illustrations`](../docs/illustrations) as HTML built on the real NOIR CSS. Render them with
+`python3 scripts/render-illustrations.py` (Playwright + Chrome) into `docs/assets`.
 
 Keep clear space around the lockup equal to half the mark's height. Do not recolour, stretch, or add effects to the mark.

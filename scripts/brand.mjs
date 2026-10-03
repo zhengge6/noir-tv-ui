@@ -171,6 +171,24 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     writeFileSync(join(OUT, `wordmark-${t}.svg`), svg(Math.ceil(W.w), 100,
       `<g fill="${t === "dark" ? "#FFFFFF" : "#0A0A0A"}">${W.d}</g>`, "NOIR"));
   }
+  {
+    // README header: the dark lockup on a #0A0A0A canvas, 1000 px wide, centred in 1280x400 (used in light and dark mode)
+    const L = lockup("dark", "rh"), sc = 1000 / L.w, x = (1280 - 1000) / 2, y = (400 - L.h * sc) / 2;
+    writeFileSync(join(OUT, "readme-logo.svg"), svg(1280, 400,
+      `<rect width="1280" height="400" fill="#0A0A0A"/><g transform="translate(${f(x)} ${f(y)}) scale(${f(sc * 1000) / 1000})">${L.body}</g>`, "NOIR TV UI"));
+  }
+  {
+    // The eclipse ring alone (transparent), used as a motif in docs/illustrations
+    const C = 300, R = 236, r = 212, d = (R - r) / Math.SQRT2 - 1;
+    writeFileSync(join(OUT, "ring.svg"), svg(600, 600, `
+  <defs>
+    <linearGradient id="rg" x1="0.1" y1="0.1" x2="0.9" y2="0.9"><stop offset="0" stop-color="#5e0207"/><stop offset=".55" stop-color="#E50914"/><stop offset="1" stop-color="#FF5A62"/></linearGradient>
+    <mask id="rm" maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="600"><rect width="600" height="600" fill="#fff"/><circle cx="${f(C - d)}" cy="${f(C - d)}" r="${r}" fill="#000"/></mask>
+    <filter id="rb" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <circle cx="${C}" cy="${C}" r="${R}" fill="#E50914" opacity=".34" mask="url(#rm)" filter="url(#rb)"/>
+  <circle cx="${C}" cy="${C}" r="${R}" fill="url(#rg)" mask="url(#rm)"/>`, "NOIR ring"));
+  }
   writeFileSync(join(OUT, "social-preview.svg"), svg(1280, 640, social(), "NOIR TV UI"));
   console.log("brand/: social-preview.svg logo-dark.svg logo-light.svg mark.svg wordmark-dark.svg wordmark-light.svg");
 }

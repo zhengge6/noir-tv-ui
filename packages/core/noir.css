@@ -40,7 +40,7 @@ html.kbd .noir-icon-btn:focus, html.tv .noir-icon-btn:focus { box-shadow: var(--
 /* ---------- hero billboard ---------- */
 .noir-hero { position: relative; height: 56.25vw; max-height: 86vh; min-height: 420px; overflow: hidden; }
 .noir-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
-.noir-hero-vig { position: absolute; inset: 0; background: linear-gradient(77deg, rgba(0,0,0,.6), rgba(0,0,0,0) 85%), linear-gradient(180deg, rgba(20,20,20,0) 60%, var(--noir-canvas) 100%); }
+.noir-hero-vig { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, var(--noir-canvas) 100%), linear-gradient(77deg, rgba(0,0,0,.6), rgba(0,0,0,0) 85%); } /* bottom fade on top: no seam */
 .noir-hero-body { position: absolute; left: 4%; bottom: 24%; width: 42%; }
 .noir-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
 .noir-tag b { background: var(--noir-brand); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 12px; }

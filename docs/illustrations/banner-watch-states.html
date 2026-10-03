@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=block">
+<link rel="stylesheet" href="../../packages/core/tokens.css">
+<link rel="stylesheet" href="../../packages/core/noir.css">
+<link rel="stylesheet" href="style.css">
+<script src="art.js"></script>
+<style>
+  html, body { background: #070707; }
+  .canvas { --w: 1440px; --h: 440px; }
+  .txt { position: absolute; left: 80px; top: 96px; width: 470px; }
+  .cards { position: absolute; left: 610px; top: 58px; display: flex; gap: 26px; }
+  .cards .noir-card { width: 160px; min-width: 0; }
+  .cards .noir-poster > .ttl { font-size: 17px; }
+  .lab { margin-top: 14px; font: 13px "Geist Mono", monospace; color: #8C8C8C; }
+  .lab b { color: #EDEDED; font-weight: 500; }
+</style></head>
+<body data-out="banner-watch-states.png" data-w="1440" data-h="440" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:640px; right:-220px; top:-300px; opacity:.6">
+  <div class="txt">
+    <div class="eyebrow">Components</div>
+    <div class="h">Watch state, at a glance.</div>
+    <p class="sub">One <span class="mono" style="color:#CFCFCF">watch</span> prop drives the badge: a thin progress bar, a finished check, or a "new episodes" tag with a dot.</p>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+<script>
+  var A = NOIR_ART, specs = [
+    [9, "", '<b>none</b>'],
+    [1, '<span class="noir-badge-bar"><i style="width:62%"></i></span>', '<b>progress</b> 62%'],
+    [4, '<span class="noir-badge-check">&#10003;</span>', '<b>finished</b>'],
+    [3, '<span class="noir-badge-update">Ep 12 out</span><span class="noir-badge-dot"></span>', '<b>updated</b>']];
+  document.getElementById("cards").innerHTML = specs.map(function (s) {
+    return '<div><button class="noir-card"><span class="noir-poster"><span class="art" style="background:' + A.poster(s[0]) + '"></span><span class="ttl">' + A.TITLES[s[0]] + '</span>' + s[1] + '</span><span class="noir-card-name">' + A.TITLES[s[0]] + '</span></button><div class="lab">watch="' + s[2] + '"</div></div>';
+  }).join("");
+</script>
+</body></html>

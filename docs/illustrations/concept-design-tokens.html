@@ -1,0 +1,69 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=block">
+<link rel="stylesheet" href="../../packages/core/tokens.css">
+<link rel="stylesheet" href="../../packages/core/noir.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  html, body { background: #070707; }
+  .canvas { --w: 1440px; --h: 880px; }
+  .head { position: absolute; left: 80px; top: 64px; }
+  .head .h { margin: 16px 0 10px; font-size: 42px; }
+  .sw { position: absolute; top: 236px; width: 150px; }
+  .sw .t { width: 150px; height: 150px; border-radius: 28px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 18px 40px rgba(0,0,0,.45); }
+  .sw b { display: block; margin-top: 14px; font-size: 16px; font-weight: 600; }
+  .sw code { display: block; margin-top: 4px; font: 13px "Geist Mono", monospace; color: #8C8C8C; }
+  .sw i { font: normal 13px "Geist Mono", monospace; color: #5E5E5E; }
+  .panel { position: absolute; top: 500px; height: 316px; border-radius: 28px; background: linear-gradient(180deg, #131315, #0c0c0d);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); padding: 28px 30px; box-sizing: border-box; overflow: hidden; }
+  .panel .eyebrow { color: #8C8C8C; font-size: 12px; }
+  .disp { font-family: var(--noir-font-display); font-size: 66px; line-height: 1; margin: 22px 0 8px; letter-spacing: 1px; }
+  .cap { font-size: 14px; color: #8C8C8C; line-height: 1.5; }
+  .body { font-family: var(--noir-font-body); font-size: 22px; font-weight: 600; margin: 22px 0 6px; }
+  .p2 .noir-btn { height: 40px; font-size: 15px; padding: 0 18px 0 16px; margin: 0 6px 10px 0; }
+  .p2 .noir-chip { padding: 6px 15px; font-size: 13px; }
+  .poster-demo { position: absolute; right: 30px; top: 28px; width: 76px; height: 114px; border-radius: 14px; box-shadow: var(--noir-shadow-poster), inset 0 0 0 1px rgba(255,255,255,.06); }
+  .radii { font: 13px "Geist Mono", monospace; color: #8C8C8C; line-height: 1.8; margin: 18px 0 44px; }
+  .p3 .noir-card-top { position: absolute; left: 24px; top: 74px; width: 200px; min-width: 0; }
+  .p3 .noir-card-top .rank { font-size: 170px; width: 96px; min-width: 0; letter-spacing: -12px; margin-right: -16px; -webkit-text-stroke: 3px #5c5c5c; color: #101012; }
+  .p3 .noir-card-top .noir-card, .p3 .noir-card-top .noir-card.x { width: 104px !important; min-width: 0; }
+  .p3 .noir-card .noir-poster { transform: scale(1.08); box-shadow: 0 0 0 3px #fff, var(--noir-shadow-poster); }
+  .p3 .cap { position: absolute; left: 252px; top: 96px; width: 130px; }
+</style></head>
+<body data-out="concept-design-tokens.png" data-w="1440" data-h="880" data-dsf="1.25">
+<div class="canvas">
+  <img class="ring" src="../../brand/ring.svg" style="width:760px; right:-300px; top:-480px; opacity:.85">
+  <div class="head">
+    <img class="wm" src="../../brand/logo-dark.svg" height="44">
+    <div class="h">Design tokens</div>
+    <p class="sub">One set of CSS custom properties drives every surface, in vanilla, React and Vue.</p>
+  </div>
+  <div class="sw" style="left:80px"><div class="t" style="background:#141414"></div><b>Canvas</b><code>--noir-canvas</code><i>#141414</i></div>
+  <div class="sw" style="left:262px"><div class="t" style="background:#181818"></div><b>Surface</b><code>--noir-surface</code><i>#181818</i></div>
+  <div class="sw" style="left:444px"><div class="t" style="background:linear-gradient(135deg,#8E040B,#E50914 55%,#FF5A62)"></div><b>Brand red</b><code>--noir-brand</code><i>#E50914</i></div>
+  <div class="sw" style="left:626px"><div class="t" style="background:#46d369"></div><b>Score</b><code>--noir-score</code><i>#46D369</i></div>
+  <div class="sw" style="left:808px"><div class="t" style="background:#e5e5e5"></div><b>Text</b><code>--noir-text</code><i>#E5E5E5</i></div>
+  <div class="sw" style="left:990px"><div class="t" style="background:#808080"></div><b>Muted</b><code>--noir-muted</code><i>#808080</i></div>
+  <div class="sw" style="left:1172px"><img class="t" src="../../brand/mark.svg" style="display:block"><b>Mark</b><code>brand/mark.svg</code><i>rim light</i></div>
+
+  <div class="panel" style="left:80px; width:400px">
+    <div class="eyebrow">Type</div>
+    <div class="disp">Starfarer</div>
+    <div class="cap">Display · <span class="mono">--noir-font-display</span><br>ZCOOL QingKe HuangYou, then system CJK</div>
+    <div class="body">Body text, metadata, controls</div>
+    <div class="cap">Body · <span class="mono">--noir-font-body</span><br>system UI, PingFang SC, Noto Sans SC</div>
+  </div>
+  <div class="panel p2" style="left:510px; width:420px">
+    <div class="eyebrow">Radii &amp; controls</div>
+    <div class="poster-demo" style="background:radial-gradient(circle at 46% 38%, transparent 0 27%, rgba(255,77,87,.65) 27.6% 29.4%, transparent 30%), radial-gradient(circle at 46% 38%, rgba(255,77,87,.16), transparent 60%), linear-gradient(170deg,#3b1a52,#0e0a14)"></div>
+    <div class="radii">poster 14px · panel 22px<br>pill 999px · sheet 24px</div>
+    <button class="noir-btn play">&#9654; Play</button><button class="noir-btn glass on">&#9829; Saved</button><button class="noir-btn danger">Delete</button>
+    <div><button class="noir-chip on">Newest</button><button class="noir-chip">Top rated</button><button class="noir-chip">A–Z</button></div>
+  </div>
+  <div class="panel p3" style="left:960px; width:400px">
+    <div class="eyebrow">TOP10 numerals · focus</div>
+    <div class="noir-card-top"><span class="rank">1</span><button class="noir-card"><span class="noir-poster"><span class="art" style="background:radial-gradient(circle at 40% 34%, transparent 0 30%, rgba(255,255,255,.6) 30.6% 32.4%, transparent 33%), linear-gradient(160deg,#6b0a12,#16070a)"></span></span></button></div>
+    <div class="cap">Double focus ring<br><span class="mono">3px + 6px</span><br>scale <span class="mono">1.08</span><br><br>Only for remotes and keyboards</div>
+  </div>
+</div>
+</body></html>
