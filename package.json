@@ -1,0 +1,22 @@
+{
+  "name": "noir-tv-ui",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Cinematic, poster-first UI kit for TV, phones and Android WebView. Vanilla core with React and Vue bindings.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/zhengge6/noir-tv-ui.git" },
+  "workspaces": [
+    "packages/core",
+    "packages/react",
+    "packages/vue",
+    "examples/react-vite",
+    "examples/vue-vite"
+  ],
+  "scripts": {
+    "build:packages": "npm run build -w @noir-tv-ui/react -w @noir-tv-ui/vue",
+    "build:examples": "npm run build -w example-react-vite -w example-vue-vite",
+    "build": "npm run build:packages && npm run build:examples",
+    "pages": "npm run build && node scripts/pages.mjs",
+    "brand": "node scripts/brand.mjs"
+  }
+}

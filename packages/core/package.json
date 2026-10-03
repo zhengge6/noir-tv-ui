@@ -1,0 +1,55 @@
+{
+  "name": "@noir-tv-ui/core",
+  "version": "0.2.0",
+  "description": "NOIR TV UI core: design tokens, component CSS and vanilla JS helpers (D-pad focus, WebView-safe back stack).",
+  "license": "MIT",
+  "author": "zhengge6",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhengge6/noir-tv-ui.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://zhengge6.github.io/noir-tv-ui/demo/",
+  "keywords": [
+    "ui-kit",
+    "tv",
+    "android-tv",
+    "webview",
+    "d-pad",
+    "design-tokens",
+    "vanilla-js"
+  ],
+  "main": "./noir.mjs",
+  "module": "./noir.mjs",
+  "unpkg": "./noir.js",
+  "jsdelivr": "./noir.js",
+  "style": "./noir.css",
+  "exports": {
+    ".": {
+      "types": "./noir.d.ts",
+      "default": "./noir.mjs"
+    },
+    "./noir.js": "./noir.js",
+    "./noir.mjs": {
+      "types": "./noir.d.ts",
+      "default": "./noir.mjs"
+    },
+    "./tokens.css": "./tokens.css",
+    "./noir.css": "./noir.css",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "*.css",
+    "./noir.js",
+    "./noir.mjs"
+  ],
+  "files": [
+    "tokens.css",
+    "noir.css",
+    "noir.js",
+    "noir.mjs",
+    "fonts/README.md",
+    "noir.d.ts"
+  ],
+  "types": "./noir.d.ts"
+}

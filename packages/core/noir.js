@@ -11,14 +11,19 @@
  */
 (function (global) {
   "use strict";
+  if (typeof document === "undefined") return;     // SSR / non-browser: nothing to do
   var root = document.documentElement;
   var NOIR = {};
 
   /* ---------------- input mode ---------------- */
+  NOIR.version = "0.2.0";
+
   NOIR.input = {
     init: function (opts) {
       opts = opts || {};
       if (opts.tv) root.classList.add("tv");
+      if (NOIR.input._on) return;                    // listeners are installed once
+      NOIR.input._on = true;
       document.addEventListener("keydown", function (e) {
         if (e.keyCode >= 37 && e.keyCode <= 40 || e.keyCode === 9) root.classList.add("kbd");
       }, true);
@@ -50,17 +55,19 @@
       try { history.go(-n); } catch (e) { pending = 0; }
     }
     try { if (/^#[a-z0-9-]+$/i.test(location.hash) && !(history.state && history.state.noir)) history.replaceState(null, "", url("")); } catch (e) {}
-    global.addEventListener("popstate", function (e) {
+    function onPop(e) {
       pending = 0;
       onLevel(e.state && e.state.noir ? String(e.state.noir) : "");
-    });
+    }
+    global.addEventListener("popstate", onPop);
     return {
       push: function (tag) { if (top() === tag) return; try { history.pushState({ noir: tag, d: depth() + 1 }, "", url(tag)); } catch (e) {} },
       replace: function (tag) { try { history.replaceState({ noir: tag, d: depth() || 1 }, "", url(tag)); } catch (e) {} },
       back: function (tag) { if (!tag || top() === tag) go(1); },   // pop only if that level is on top
       home: function () { go(depth()); },
       top: top,
-      depth: depth
+      depth: depth,
+      destroy: function () { global.removeEventListener("popstate", onPop); }   // e.g. React effect cleanup
     };
   };
 
@@ -107,7 +114,10 @@
       if (r.top < 80 || r.bottom > vh - 8) global.scrollBy(0, r.top - Math.min(140, vh * 0.2));
     },
     init: function () {
+      if (NOIR.focus._on) return;                    // install once
+      NOIR.focus._on = true;
       document.addEventListener("keydown", function (e) {
+        if (e.defaultPrevented) return;
         var k = e.keyCode, dir = k === 37 ? "left" : k === 38 ? "up" : k === 39 ? "right" : k === 40 ? "down" : "";
         if (!dir) return;
         var a = document.activeElement;
@@ -276,4 +286,4 @@
   };
 
   global.NOIR = NOIR;
-})(window);
+})(typeof window !== "undefined" ? window : {});

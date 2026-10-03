@@ -1,0 +1,26 @@
+name: Bug report
+description: Something looks or behaves wrong
+labels: [bug]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options: ["core (vanilla)", "react", "vue", "demo / docs"]
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A minimal snippet or a link to a reproduction helps a lot.
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "e.g. Android TV 11, System WebView 120, D-pad remote"
+    validations: { required: true }

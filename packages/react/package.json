@@ -1,0 +1,35 @@
+{
+  "name": "@noir-tv-ui/react",
+  "version": "0.2.0",
+  "description": "React bindings for NOIR TV UI: typed Hero, PosterRow, PosterCard, Pill, NavBar, BottomSheet and a WebView-safe useBackStack hook.",
+  "license": "MIT",
+  "author": "zhengge6",
+  "repository": { "type": "git", "url": "git+https://github.com/zhengge6/noir-tv-ui.git", "directory": "packages/react" },
+  "homepage": "https://zhengge6.github.io/noir-tv-ui/demo/react/",
+  "keywords": ["react", "ui-kit", "tv", "android-tv", "webview", "d-pad"],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": ["./dist/noir.js"],
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@noir-tv-ui/core": "0.2.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "typescript": "^5.6.0"
+  }
+}
