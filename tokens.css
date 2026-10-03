@@ -1,0 +1,68 @@
+/*!
+ * NOIR TV UI — design tokens
+ * A dark, poster-first media UI for phones, desktops and TV boxes (D-pad).
+ * MIT License. Display font: ZCOOL QingKe HuangYou (SIL OFL 1.1), see fonts/README.md.
+ */
+:root {
+  /* ---- color ---- */
+  --noir-canvas: #141414;          /* page background */
+  --noir-surface: #181818;         /* sheets, panels */
+  --noir-surface-2: #262628;       /* dialogs */
+  --noir-brand: #E50914;           /* brand red: active nav pill, progress, badges */
+  --noir-brand-glow: rgba(229, 9, 20, .65);
+  --noir-score: #46d369;           /* rating text */
+  --noir-text: #e5e5e5;
+  --noir-text-strong: #ffffff;
+  --noir-muted: #808080;
+  --noir-update: #ff5a63;          /* "updated to ep N" accent */
+  --noir-chip: rgba(255, 255, 255, .12);
+  --noir-chip-on: #ffffff;
+  --noir-ghost: rgba(109, 109, 110, .72);  /* secondary pill button */
+  --noir-scrim: rgba(0, 0, 0, .72);        /* modal backdrop */
+  --noir-numeral-stroke: #5c5c5c;          /* TOP10 outlined numerals */
+
+  /* ---- type ---- */
+  --noir-font-display: "ZCOOL QingKe HuangYou", "NOIR Display", -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+  --noir-font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --noir-font-numeral: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --noir-size-hero: clamp(30px, 4vw, 64px);
+  --noir-size-row: clamp(16px, 1.45vw, 26px);
+  --noir-size-body: 15px;
+  --noir-size-small: 12px;
+  --noir-tracking-display: 1px;
+
+  /* ---- shape ---- */
+  --noir-radius-poster: 14px;
+  --noir-radius-panel: 22px;
+  --noir-radius-sheet-mobile: 24px;
+  --noir-radius-pill: 999px;
+
+  /* ---- elevation ---- */
+  --noir-shadow-poster: 0 8px 22px rgba(0, 0, 0, .45);
+  --noir-shadow-button: 0 6px 18px rgba(0, 0, 0, .35);
+  --noir-shadow-sheet: 0 24px 60px rgba(0, 0, 0, .6);
+  --noir-shadow-dialog: 0 20px 50px rgba(0, 0, 0, .6);
+
+  /* ---- focus (keyboard / TV remote) ---- */
+  --noir-focus-ring: 0 0 0 3px #141414, 0 0 0 6px #ffffff;
+  --noir-focus-ring-tight: 0 0 0 3px #ffffff;
+  --noir-focus-scale: 1.08;
+
+  /* ---- gradient-blur top nav ---- */
+  --noir-nav-height: 68px;
+  --noir-nav-gradient: linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.38) 55%, rgba(0,0,0,0) 100%);
+  --noir-nav-blur: blur(18px) saturate(160%);
+  --noir-nav-mask: linear-gradient(180deg, #000 0%, #000 35%, transparent 100%);
+
+  /* ---- motion ---- */
+  --noir-ease-out: cubic-bezier(.2, .8, .2, 1);
+  --noir-ease-in: cubic-bezier(.4, 0, 1, 1);
+  --noir-dur-fast: .18s;
+  --noir-dur: .22s;
+
+  /* ---- safe area (Android WebView / iOS notch) ---- */
+  --noir-safe-top: env(safe-area-inset-top, 0px);
+}
+@media (max-width: 599px) {
+  :root { --noir-nav-height: 56px; --noir-radius-poster: 12px; }
+}

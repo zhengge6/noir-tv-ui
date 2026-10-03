@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>NOIR TV UI — demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Display font: ZCOOL QingKe HuangYou, SIL Open Font License 1.1 (see ../fonts/README.md) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=swap">
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../noir.css">
+  <style>
+    .demo-foot { color: #595959; font-size: 12px; margin: 26px 4% 40px; }
+    .demo-foot a { color: #8a8a8a; }
+  </style>
+</head>
+<body>
+  <header class="noir-topbar">
+    <button type="button" class="noir-brand" data-go="home" aria-label="NOIR home">NOIR</button>
+    <nav class="noir-nav" id="nav">
+      <button type="button" data-go="home" class="on">Home</button>
+      <button type="button" data-go="lib">Library</button>
+      <button type="button" data-go="fav" class="noir-dot" id="navFav">Favorites</button>
+    </nav>
+    <div class="noir-spacer"></div>
+    <button type="button" class="noir-icon-btn" aria-label="Search" id="searchBtn"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5l5.5 5.5"></path></svg></button>
+  </header>
+
+  <main id="home">
+    <section class="noir-hero">
+      <div class="noir-hero-bg" id="heroBg"></div>
+      <div class="noir-hero-vig"></div>
+      <div class="noir-hero-body">
+        <div class="noir-tag"><b>TOP 10</b><span>No. 1 today</span></div>
+        <h1 class="noir-hero-title" id="heroTitle"></h1>
+        <div class="noir-meta"><span class="score" id="heroScore"></span><span class="pill" id="heroEps"></span></div>
+        <p class="noir-desc">Abstract placeholder art and invented titles. Hero billboard with a soft backdrop, score, episode count and pill-shaped actions.</p>
+        <button type="button" class="noir-btn play" id="heroPlay">&#9654; Play</button>
+        <button type="button" class="noir-btn ghost" id="heroInfo">&#9432; Details</button>
+      </div>
+    </section>
+    <div class="noir-rows" id="rows"></div>
+    <div class="demo-foot">NOIR TV UI demo · placeholder art · <a href="https://github.com/zhengge6/noir-tv-ui">source</a></div>
+  </main>
+
+  <section class="noir-page" id="lib" hidden>
+    <h2>Library</h2>
+    <div class="noir-chips" id="libChips">
+      <button type="button" class="noir-chip on" data-sort="new">Newest</button>
+      <button type="button" class="noir-chip" data-sort="score">Top rated</button>
+      <button type="button" class="noir-chip" data-sort="az">A–Z</button>
+    </div>
+    <p class="noir-note" id="libNote"></p>
+    <div class="noir-grid" id="libGrid"></div>
+  </section>
+
+  <section class="noir-page" id="fav" hidden>
+    <h2>Favorites</h2>
+    <div class="noir-chips"><button type="button" class="noir-chip" id="favManage">Manage</button></div>
+    <p class="noir-note">Long-press a poster (or hold OK on a remote) to enter management mode.</p>
+    <div class="noir-grid" id="favGrid"></div>
+  </section>
+
+  <section class="noir-page" id="manage" hidden>
+    <h2>Manage favorites</h2>
+    <div class="noir-manage-bar">
+      <button type="button" class="noir-chip" id="mgAll">Select all</button>
+      <button type="button" class="noir-chip" id="mgDel">Delete selected</button>
+      <button type="button" class="noir-chip on" id="mgDone">Done</button>
+    </div>
+    <p class="noir-note" id="mgNote"></p>
+    <div class="noir-grid" id="mgGrid"></div>
+  </section>
+
+  <div class="noir-modal" id="modal" aria-hidden="true">
+    <div class="noir-sheet" role="dialog" aria-modal="true">
+      <button type="button" class="noir-sheet-x" data-close aria-label="Close">&#10005;</button>
+      <div class="noir-sheet-art"><div class="art" id="sheetArt"></div><div class="fade"></div>
+        <div class="st">
+          <h3 id="sheetTitle"></h3>
+          <button type="button" class="noir-btn play" data-autofocus id="sheetPlay">&#9654; Resume ep 3</button>
+          <button type="button" class="noir-btn glass" id="sheetFav">&#9825; Favorite</button>
+          <button type="button" class="noir-btn glass" id="sheetDone">Mark as finished</button>
+        </div>
+      </div>
+      <div class="noir-sheet-body"><div class="noir-meta"><span class="score" id="sheetScore"></span><span class="pill" id="sheetEps"></span></div><p id="sheetDesc"></p></div>
+    </div>
+  </div>
+
+  <div class="noir-confirm" id="confirm" hidden><div class="noir-confirm-box"><p></p><button type="button" class="noir-btn ghost" data-no>Cancel</button><button type="button" class="noir-btn danger" data-yes>Delete</button></div></div>
+
+  <script src="../noir.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    /* ---------- fake catalogue: invented titles, abstract gradient posters ---------- */
+    var NAMES = ["星河旅人 Starfarer", "逆光之城 Backlit City", "雾港来信 Fog Harbor Letters", "长风万里 Long Wind", "北岸灯塔 North Light",
+      "纸飞机 Paper Planes", "夏日回声 Summer Echo", "银杏街十七号 17 Ginkgo St.", "云端信号 Cloud Signal", "迷雾列车 Mist Express",
+      "第七片海 The Seventh Sea", "晚风车站 Evening Station", "白昼边境 Daylight Border", "时间旅店 Time Inn", "猫与鲸鱼 Cat & Whale",
+      "远山来客 Mountain Guest", "霓虹折叠 Neon Fold", "玻璃花园 Glass Garden", "海盐汽水 Sea Salt Soda", "秋分 Equinox"];
+    var PAL = [["#0f2027", "#2c5364"], ["#e52d27", "#b31217"], ["#1d4350", "#a43931"], ["#41295a", "#2f0743"], ["#c94b4b", "#4b134f"],
+      ["#134e5e", "#71b280"], ["#ff512f", "#dd2476"], ["#283c86", "#45a247"], ["#373b44", "#4286f4"], ["#8e2de2", "#4a00e0"]];
+    var DOTS = ["#ffffff", "#6be4ff", "#ffcf6e", "#ff6b6b"];
+    function art(i) {
+      var p = PAL[i % PAL.length], a = (i * 47) % 360, d1 = DOTS[i % 4], d2 = DOTS[(i + 1) % 4];
+      return "radial-gradient(circle at " + (20 + i * 13 % 60) + "% " + (18 + i * 7 % 30) + "%, " + d1 + "aa 0 18%, transparent 19%)," +
+             "radial-gradient(circle at " + (30 + i * 17 % 50) + "% " + (62 + i * 5 % 20) + "%, " + d2 + "88 0 24%, transparent 25%)," +
+             "linear-gradient(" + a + "deg, " + p[0] + ", " + p[1] + ")";
+    }
+    var ITEMS = NAMES.map(function (n, i) {
+      var eps = 12 + (i * 5) % 30;
+      return { id: "t" + i, title: n.split(" ")[0], sub: n.slice(n.indexOf(" ") + 1), art: art(i), score: (8 + (i * 7 % 20) / 10).toFixed(1), eps: eps,
+        state: i % 5 === 1 ? { s: "prog", p: 30 + i * 3 % 60 } : i % 7 === 2 ? { s: "done" } : i % 6 === 3 ? { s: "upd", n: eps } : { s: "none" } };
+    });
+    var BY = {}; ITEMS.forEach(function (v) { BY[v.id] = v; });
+    var FAVS = ["t2", "t5", "t8", "t11", "t14", "t3"];
+
+    function poster(v) {
+      var badge = v.state.s === "prog" ? '<span class="noir-badge-bar"><i style="width:' + v.state.p + '%"></i></span>'
+        : v.state.s === "done" ? '<span class="noir-badge-check">&#10003;</span>'
+        : v.state.s === "upd" ? '<span class="noir-badge-update">Ep ' + v.state.n + ' out</span><span class="noir-badge-dot"></span>' : "";
+      return '<span class="noir-poster"><span class="art" style="background:' + v.art + '"></span><span class="ttl">' + v.title + "</span>" + badge + "</span>" +
+             '<span class="noir-card-name">' + v.sub + "</span>";
+    }
+    function card(v) { return '<button type="button" class="noir-card" data-id="' + v.id + '" aria-label="' + v.sub + '">' + poster(v) + "</button>"; }
+    function row(title, html, extra) {
+      return '<section class="noir-row"><div class="noir-row-title">' + title + (extra || "") + '</div><div class="noir-row-scroll">' + html + "</div></section>";
+    }
+
+    /* ---------- home ---------- */
+    var hero = ITEMS[0]; hero.score = "9.6";
+    $("heroBg").style.background = hero.art; $("heroTitle").textContent = hero.title; $("heroScore").textContent = hero.score; $("heroEps").textContent = hero.eps + " episodes";
+    function renderHome() {
+      var top = "", cont = "", fresh = "";
+      ITEMS.slice(0, 10).forEach(function (v, i) {
+        top += '<div class="noir-card-top' + (i === 9 ? " r10" : "") + '"><span class="rank">' + (i + 1) + "</span>" + card(v) + "</div>";
+      });
+      ITEMS.filter(function (v) { return v.state.s === "prog" || v.state.s === "upd"; }).forEach(function (v) { cont += card(v); });
+      ITEMS.slice(6).forEach(function (v) { fresh += card(v); });
+      $("rows").innerHTML = row("TOP10 <small>today</small>", top) + row("Continue watching", cont) + row("New this week", fresh);
+    }
+    renderHome();
+
+    /* ---------- library ---------- */
+    function renderLib(sort) {
+      var list = ITEMS.slice();
+      if (sort === "score") list.sort(function (a, b) { return b.score - a.score; });
+      if (sort === "az") list.sort(function (a, b) { return a.sub < b.sub ? -1 : 1; });
+      $("libGrid").innerHTML = list.map(card).join("");
+      $("libNote").textContent = list.length + " titles";
+    }
+    renderLib("new");
+    function renderFav() { $("favGrid").innerHTML = FAVS.map(function (id) { return card(BY[id]); }).join(""); $("navFav").classList.toggle("has", FAVS.length > 0); }
+    renderFav();
+
+    /* ---------- back stack: levels = lib | fav | manage | detail | confirm ---------- */
+    NOIR.input.init({ tv: /[?&]tv=1/.test(location.search) });
+    NOIR.focus.init();
+    var page = "";
+    var PAGES = { lib: "lib", fav: "fav", manage: "manage" };
+    function show(name) {
+      ["home", "lib", "fav", "manage"].forEach(function (p) { $(p).hidden = p !== (name || "home"); });
+      page = name;
+      var nb = document.querySelectorAll("#nav button");
+      for (var i = 0; i < nb.length; i += 1) nb[i].classList.toggle("on", nb[i].getAttribute("data-go") === (name || "home"));
+      window.scrollTo(0, 0);
+    }
+    var nav = NOIR.backStack(function (tag) {           // popstate: make `tag` the top level
+      if (tag !== "confirm") confirmBox.close(false, true);
+      if (tag !== "detail") sheet.close(true);
+      if (PAGES[tag]) { if (page !== tag) { show(tag); if (tag === "manage") mgr.render(); } }
+      else if (!tag && page) show("");
+    });
+    function openPage(name) {
+      if (!page || name === "manage") nav.push(name); else if (page !== name) nav.replace(name);   // tabs replace, sub-levels push
+      show(name);
+    }
+    var sheet = NOIR.sheet($("modal"), nav);
+    var confirmBox = NOIR.confirm($("confirm"), nav);
+    var mgr = NOIR.manager({
+      grid: $("mgGrid"), bar: { all: $("mgAll"), del: $("mgDel"), done: $("mgDone"), note: $("mgNote") },
+      items: function () { return FAVS.map(function (id) { return BY[id]; }); },
+      render: function (v) { return poster(v); },
+      onDelete: function (ids) { FAVS = FAVS.filter(function (id) { return ids.indexOf(id) < 0; }); renderFav(); },
+      confirm: confirmBox, what: "favorites"
+    });
+    function manage(pre) { openPage("manage"); mgr.open(pre); }
+
+    function openDetail(v) {
+      sheet.open(function () {
+        $("sheetArt").style.background = v.art; $("sheetTitle").textContent = v.title;
+        $("sheetScore").textContent = v.score; $("sheetEps").textContent = v.eps + " episodes";
+        $("sheetDesc").textContent = v.sub + " — an invented title with abstract art. The bottom sheet slides down on back, and the page underneath never re-renders.";
+        $("sheetFav").innerHTML = FAVS.indexOf(v.id) >= 0 ? "&#9829; Favorited" : "&#9825; Favorite";
+        $("sheetFav").classList.toggle("on", FAVS.indexOf(v.id) >= 0);
+        $("sheetFav").onclick = function () {
+          var k = FAVS.indexOf(v.id); if (k >= 0) FAVS.splice(k, 1); else FAVS.unshift(v.id);
+          renderFav(); this.innerHTML = k >= 0 ? "&#9825; Favorite" : "&#9829; Favorited"; this.classList.toggle("on", k < 0);
+        };
+        $("sheetDone").classList.toggle("on", v.state.s === "done");
+        $("sheetDone").onclick = function () { v.state = v.state.s === "done" ? { s: "none" } : { s: "done" }; this.classList.toggle("on", v.state.s === "done"); renderHome(); renderLib("new"); renderFav(); };
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      var go = e.target.closest("[data-go]");
+      if (go) { var g = go.getAttribute("data-go"); if (g === "home") { if (page) { show(""); nav.home(); } } else openPage(g); return; }
+      var chip = e.target.closest("[data-sort]");
+      if (chip) { var cs = document.querySelectorAll("#libChips .noir-chip"); for (var i = 0; i < cs.length; i += 1) cs[i].classList.toggle("on", cs[i] === chip); renderLib(chip.getAttribute("data-sort")); return; }
+      var c = e.target.closest(".noir-card[data-id]");
+      if (c) { openDetail(BY[c.getAttribute("data-id")]); return; }
+    });
+    $("heroInfo").addEventListener("click", function () { openDetail(hero); });
+    $("heroPlay").addEventListener("click", function () { NOIR.toast("Play: " + hero.sub); });
+    $("sheetPlay").addEventListener("click", function () { NOIR.toast("Play"); });
+    $("searchBtn").addEventListener("click", function () { NOIR.toast("Search is left to your app"); });
+    $("favManage").addEventListener("click", function () { manage(); });
+    $("mgDone").addEventListener("click", function () { nav.back("manage"); });
+    NOIR.longPress($("favGrid"), ".noir-card[data-id]", function (el) { manage(el.getAttribute("data-id")); });
+    document.addEventListener("keydown", function (e) {   // Esc / Backspace-outside-inputs = one level back (desktop & TV keyboards)
+      if (e.keyCode !== 27) return;
+      e.preventDefault();
+      if (confirmBox.isOpen()) confirmBox.close(false);
+      else if (sheet.isOpen()) sheet.close();
+      else if (page) history.back();
+    });
+  })();
+  </script>
+</body>
+</html>
