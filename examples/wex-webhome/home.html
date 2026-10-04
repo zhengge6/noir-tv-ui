@@ -1,0 +1,3380 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#141414">
+  <meta name="referrer" content="no-referrer">
+  <title>WEX</title>
+  <link rel="icon" href="data:,">
+
+  <script>
+    (function () {
+      if (!Array.prototype.forEach) {
+        Array.prototype.forEach = function (fn, thisArg) {
+          for (var i = 0; i < this.length; i += 1) {
+            if (i in this) fn.call(thisArg, this[i], i, this);
+          }
+        };
+      }
+      if (!Element.prototype.matches) {
+        Element.prototype.matches = Element.prototype.webkitMatchesSelector || Element.prototype.msMatchesSelector;
+      }
+      if (!Element.prototype.closest) {
+        Element.prototype.closest = function (selector) {
+          var node = this;
+          while (node && node.nodeType === 1) {
+            if (node.matches && node.matches(selector)) return node;
+            node = node.parentElement;
+          }
+          return null;
+        };
+      }
+      if (!Element.prototype.replaceChildren) {
+        Element.prototype.replaceChildren = function () {
+          while (this.firstChild) this.removeChild(this.firstChild);
+          for (var i = 0; i < arguments.length; i += 1) {
+            this.appendChild(arguments[i]);
+          }
+        };
+      }
+      var cls = " webhome-ready";
+      if (!("gap" in document.documentElement.style)) cls += " no-layout-gap";
+      if (!window.CSS || !CSS.supports || !CSS.supports("top", "calc(1px + 1px)")) cls += " no-css-functions";
+      if (!("aspectRatio" in document.documentElement.style)) cls += " no-aspect-ratio";
+      try {
+        if (window.fongmiClient && window.fongmiClient.isLeanback) cls += " tv";
+      } catch (e) {}
+      document.documentElement.className += cls;
+    })();
+  </script>
+  <style>
+    :root {
+      --fm-web-height: 100vh;
+      --fm-safe-top: 0px;
+      --fm-safe-bottom: 0px;
+      --safe-top: var(--fm-safe-top, 0px);
+      --safe-bottom: var(--fm-safe-bottom, 0px);
+      --active-safe-top: 0px;
+      color-scheme: dark;
+    }
+    @supports (top: max(0px, 1px)) {
+      :root {
+        --safe-top: max(var(--fm-safe-top, 0px), env(safe-area-inset-top, 0px));
+        --safe-bottom: max(var(--fm-safe-bottom, 0px), env(safe-area-inset-bottom, 0px));
+      }
+    }
+    html.safe-top-active { --active-safe-top: var(--safe-top); }
+    /* Solid Netflix-style canvas on purpose (the devkit only *recommends* transparent backgrounds). */
+    html, body {
+      min-height: var(--fm-web-height, 100vh);
+      margin: 0;
+      padding: 0;
+      background: #141414;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC",
+        "Source Han Sans SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body { overflow-x: hidden; }
+    button { font: inherit; color: inherit; border: 0; background: none; padding: 0; margin: 0; cursor: pointer; }
+    button:focus, input:focus { outline: none; }
+    .app {
+      min-height: var(--fm-web-height, 100vh);
+      padding-bottom: 32px;
+      padding-bottom: calc(32px + var(--safe-bottom));
+    }
+
+    /* ---------- top bar ---------- */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      height: 56px;
+      padding: 0 4%;
+      padding-top: var(--active-safe-top);
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      background: linear-gradient(180deg, rgba(0,0,0,.72) 10%, rgba(0,0,0,0));
+    }
+    .topbar:before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: #141414;
+      opacity: 0;
+      -webkit-transition: opacity .3s; transition: opacity .3s;
+      z-index: -1;
+    }
+    .topbar.solid:before { opacity: 1; }
+    .brand {
+      color: #E50914;
+      font-weight: 900;
+      font-size: 30px;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-right: 28px;
+      -webkit-transform: scaleY(1.18); transform: scaleY(1.18);
+      text-shadow: 0 2px 6px rgba(0,0,0,.45);
+      white-space: nowrap;
+    }
+    .nav { display: none; }
+    .nav button {
+      color: #e5e5e5; font-size: 14px; margin-right: 20px; padding: 6px 0;
+      -webkit-transition: opacity .2s; transition: opacity .2s;
+    }
+    .nav button.on { font-weight: 700; color: #fff; }
+    .nav button:focus { color: #fff; }
+    .spacer { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; }
+    .search { position: relative; height: 34px; width: 34px; }
+    .sbtn { position: absolute; right: 0; top: 0; width: 34px; height: 34px; z-index: 2; border-radius: 4px; }
+    .sbtn svg { width: 22px; height: 22px; display: block; margin: 6px; fill: none; stroke: #fff; stroke-width: 2.2; }
+    html.kbd .sbtn:focus, html.tv .sbtn:focus { box-shadow: 0 0 0 2px #fff; }
+    .sinput {
+      position: absolute; right: 0; top: 0;
+      width: 230px; height: 34px;
+      box-sizing: border-box;
+      padding: 0 10px 0 38px;
+      border: 1px solid rgba(255,255,255,.85);
+      border-radius: 2px;
+      background: rgba(0,0,0,.82);
+      color: #fff; font-size: 14px;
+      opacity: 0;
+      -webkit-transform: scaleX(.15); transform: scaleX(.15);
+      -webkit-transform-origin: right center; transform-origin: right center;
+      -webkit-transition: opacity .2s, -webkit-transform .25s; transition: opacity .2s, transform .25s;
+      pointer-events: none;
+      -webkit-appearance: none;
+    }
+    .search.open .sinput { opacity: 1; -webkit-transform: none; transform: none; pointer-events: auto; }
+    .search.open .sbtn { right: 196px; }
+    .sinput:focus { border-color: #fff; box-shadow: 0 0 0 1px #fff; }
+
+    /* ---------- hero billboard ---------- */
+    .hero {
+      position: relative;
+      height: 56.25vw;
+      max-height: 86vh;
+      min-height: 360px;
+      overflow: hidden;
+      background: #000;
+    }
+    .hero-bg {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      opacity: 0;
+      -webkit-transition: opacity .6s; transition: opacity .6s;
+    }
+    .hero-bg.ok { opacity: 1; }
+    .hero-vig {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        linear-gradient(180deg, rgba(20,20,20,0) 55%, rgba(20,20,20,.55) 75%, #141414 98%),
+        linear-gradient(77deg, rgba(0,0,0,.82) 0, rgba(0,0,0,.45) 30%, rgba(0,0,0,0) 62%);
+    }
+    .hero-body {
+      position: absolute;
+      left: 4%; bottom: 30%;
+      width: 40%;
+      z-index: 2;
+    }
+    .hero-tag {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #fff; margin-bottom: 12px;
+    }
+    .hero-tag .nlogo {
+      color: #E50914; font-family: "WEXTitle", -apple-system, "PingFang SC", sans-serif;
+      font-size: 24px; font-weight: 400; letter-spacing: 1px; line-height: 1; margin-right: 12px;
+    }
+    .hero-tag .cat { font-size: 16px; font-weight: 700; letter-spacing: 3px; }
+    .hero-tag .t10 {
+      display: inline-block; background: #E50914; color: #fff; font-size: 9px; line-height: 1;
+      padding: 4px 3px 3px; border-radius: 2px; margin-right: 8px; text-align: center; font-weight: 900;
+    }
+    .hero-tag .t10 b { display: block; font-size: 13px; }
+    .hero-title {
+      margin: 0 0 34px;
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -1px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,.6);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .hero-meta { font-size: 15px; color: #fff; margin-bottom: 10px; text-shadow: 1px 1px 4px rgba(0,0,0,.6); }
+    .hero-meta .score { color: #46d369; font-weight: 700; margin-right: 10px; }
+    .hero-meta .pill { display: inline-block; border: 1px solid rgba(255,255,255,.4); padding: 0 6px; margin-right: 10px; font-size: 12px; line-height: 18px; }
+    .hero-desc {
+      margin: 0 0 24px;
+      font-size: 17px; line-height: 1.55; color: #fff;
+      text-shadow: 1px 1px 4px rgba(0,0,0,.7);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .hero-btns { white-space: nowrap; }
+    .btn {
+      display: inline-block;
+      height: 42px; line-height: 42px;
+      padding: 0 26px 0 22px;
+      border-radius: 4px;
+      font-size: 17px; font-weight: 700;
+      margin-right: 10px;
+      -webkit-transition: -webkit-transform .15s, opacity .15s; transition: transform .15s, opacity .15s;
+    }
+    .btn i { font-style: normal; display: inline-block; margin-right: 8px; font-size: 18px; }
+    .btn-play { background: #fff; color: #000; }
+    .btn-info { background: rgba(109,109,110,.72); color: #fff; }
+    .btn:active { opacity: .75; }
+    html.kbd .btn:focus, html.tv .btn:focus { -webkit-transform: scale(1.06); transform: scale(1.06); box-shadow: 0 0 0 3px #141414, 0 0 0 5px #fff; }
+    @media (hover: hover) {
+      .btn-play:hover { opacity: .8; }
+      .btn-info:hover { opacity: .8; }
+    }
+
+    /* ---------- rows ---------- */
+    .rows { position: relative; z-index: 3; margin-top: -9vw; }
+    .row { margin-bottom: 6px; }
+    .row[hidden] { display: none; }
+    .row-title {
+      margin: 0 4%;
+      font-size: 20px; font-weight: 700; color: #e5e5e5;
+      line-height: 1.3;
+    }
+    .row-title small { font-size: 12px; font-weight: 400; color: #808080; margin-left: 8px; }
+    /* v2e item 4b: 收藏 heart next to the first visible row title */
+    .hfav { display: inline-block; vertical-align: middle; position: relative; width: 30px; height: 30px; margin: -4px 0 0 10px; padding: 0; border-radius: 50%; background: rgba(255,255,255,.12); -webkit-transition: background .2s, -webkit-transform .2s; transition: background .2s, transform .2s; }
+    .hfav[hidden] { display: none; }
+    .apptag { position: absolute; left: 8px; bottom: 8px; z-index: 3; padding: 1px 7px; border-radius: 999px; font-size: 10px; line-height: 15px; font-weight: 700; color: #141414; background: rgba(255,255,255,.88); pointer-events: none; }
+    .favsec { width: 100%; margin: 6px 0 10px; font-size: 13px; color: #8c8c8c; }
+    /* v2e 6c: shared management mode (继续观看 / 收藏) */
+    .rmng { float: right; margin: 2px 4% 0 0; padding: 3px 12px; border-radius: 999px; font-size: 13px; font-family: -apple-system, "PingFang SC", "Noto Sans SC", sans-serif; letter-spacing: 0; color: #cfcfcf; background: rgba(255,255,255,.1); }
+    .row-title .rmng { margin-right: 0; }
+    @media (hover: hover) { .rmng:hover { background: rgba(255,255,255,.22); color: #fff; } }
+    html.kbd .rmng:focus, html.tv .rmng:focus { background: #fff; color: #141414; }
+    .mitem { position: relative; }
+    .mcard { display: block; width: 100%; text-align: left; }
+    .mcard .poster { -webkit-transition: -webkit-transform .18s, opacity .18s; transition: transform .18s, opacity .18s; }
+    .mcard.on .poster { opacity: .82; }
+    html.kbd .mcard:focus .poster, html.tv .mcard:focus .poster { -webkit-transform: scale(1.05); transform: scale(1.05); box-shadow: 0 0 0 3px #fff, 0 12px 28px rgba(0,0,0,.6) !important; }
+    .mchk { position: absolute; top: 8px; left: 8px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,255,255,.9); background: rgba(0,0,0,.35); color: #fff; font-size: 13px; line-height: 22px; text-align: center; font-weight: 700; }
+    .mcard.on .mchk { background: #E50914; box-shadow: none; }
+    .mname { display: block; margin-top: 6px; font-size: 12px; color: #b3b3b3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mx { position: absolute; top: -7px; right: -7px; z-index: 4; width: 28px; height: 28px; border-radius: 50%; background: rgba(30,30,30,.92); color: #fff; font-size: 16px; line-height: 28px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.25); }
+    @media (hover: hover) { .mx:hover { background: #E50914; } }
+    html.kbd .mx:focus, html.tv .mx:focus { background: #E50914; -webkit-transform: scale(1.15); transform: scale(1.15); box-shadow: 0 0 0 2px #fff; }
+    .cfm { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 120; background: rgba(0,0,0,.6); display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+    .cfm[hidden] { display: none; }
+    .cfm-box { width: 84%; max-width: 360px; padding: 22px 20px 16px; border-radius: 20px; background: rgba(38,38,40,.97); box-shadow: 0 20px 50px rgba(0,0,0,.6); text-align: center; }
+    .cfm-box p { margin: 0 0 18px; font-size: 16px; line-height: 1.5; color: #eee; }
+    .cfm-btns .btn { margin: 0 6px; }
+    /* v2e item 6: red dots for favourites with new episodes */
+    #navFav { position: relative; }
+    .ndot { display: none; position: absolute; top: 3px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: #E50914; box-shadow: 0 0 0 2px rgba(20,20,20,.85); }
+    .has-upd .ndot { display: block; }
+    .hfav .ndot { top: -1px; right: -1px; }
+    .udot { position: absolute; top: 7px; left: 7px; z-index: 3; padding: 2px 8px 2px 6px; border-radius: 999px; font-size: 11px; line-height: 16px; color: #fff; background: rgba(229,9,20,.92); box-shadow: 0 2px 8px rgba(0,0,0,.35); pointer-events: none; }
+    .udot i { display: inline-block; width: 6px; height: 6px; margin: 0 4px 1px 0; border-radius: 50%; background: #fff; vertical-align: middle; }
+    .hfav svg { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2;
+      -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+    .hfav.has svg { fill: #E50914; stroke: #E50914; }
+    @media (hover: hover) { .hfav:hover { background: rgba(255,255,255,.24); } }
+    html.kbd .hfav:focus, html.tv .hfav:focus { background: #fff; -webkit-transform: scale(1.12); transform: scale(1.12); box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
+    html.kbd .hfav:focus svg, html.tv .hfav:focus svg { stroke: #E50914; }
+    .row-wrap { position: relative; }
+    .row-scroll {
+      position: relative;
+      overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      padding: 14px 0 26px 4%;
+      scrollbar-width: none;
+    }
+    .row-scroll::-webkit-scrollbar { display: none; }
+    .track {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-flex-wrap: nowrap; flex-wrap: nowrap;
+      -webkit-align-items: flex-end; align-items: flex-end;
+    }
+    .track .end { -webkit-flex: none; flex: none; width: 4vw; height: 1px; }
+    .arrow {
+      display: none;
+      position: absolute; top: 14px; bottom: 26px;
+      width: 4%; z-index: 6;
+      background: rgba(20,20,20,.55);
+      color: #fff; font-size: 44px; line-height: 1;
+      opacity: 0;
+      -webkit-transition: opacity .2s; transition: opacity .2s;
+    }
+    .arrow.l { left: 0; border-radius: 0 4px 4px 0; }
+    .arrow.r { right: 0; border-radius: 4px 0 0 4px; }
+    .arrow span { display: inline-block; -webkit-transition: -webkit-transform .2s; transition: transform .2s; }
+    .arrow:hover span { -webkit-transform: scale(1.25); transform: scale(1.25); }
+    @media (min-width: 900px) and (hover: hover) {
+      .arrow { display: block; }
+      .row-wrap:hover .arrow { opacity: 1; }
+      .arrow.hide, .row-wrap:hover .arrow.hide { opacity: 0; pointer-events: none; }
+    }
+    html.tv .arrow { display: none; }
+
+    /* ---------- cards ---------- */
+    .card {
+      position: relative;
+      -webkit-flex: none; flex: none;
+      display: block;
+      width: 15vw;
+      margin-right: 8px;
+      text-align: left;
+      z-index: 1;
+    }
+    .poster {
+      position: relative;
+      display: block;
+      height: 0;
+      padding-top: 133.333%;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #2a2a2a;
+      -webkit-transition: -webkit-transform .22s ease-out; transition: transform .22s ease-out;
+      -webkit-transform: translateZ(0); transform: translateZ(0);
+    }
+    .poster img {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      -webkit-transition: opacity .35s; transition: opacity .35s;
+    }
+    .poster img.ok { opacity: 1; }
+    .poster .ph {
+      position: absolute; left: 8px; right: 8px; bottom: 10px;
+      color: #8c8c8c; font-size: 12px; line-height: 1.3; font-weight: 700;
+    }
+    .glow {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.95);
+      opacity: 0;
+      -webkit-transition: opacity .2s; transition: opacity .2s;
+      pointer-events: none;
+    }
+    .mini {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 26px 8px 9px;
+      background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.88) 45%);
+      opacity: 0;
+      -webkit-transition: opacity .2s; transition: opacity .2s;
+    }
+    .mini b { display: block; font-size: 13px; line-height: 1.3; color: #fff; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .mini em { display: block; font-style: normal; font-size: 11px; color: #bcbcbc; margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .mini em.last { color: #ff5a63; font-weight: 700; }
+    .shadow {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 4px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.75);
+      opacity: 0;
+      -webkit-transition: opacity .22s; transition: opacity .22s;
+    }
+    .prog {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 3px; background: rgba(90,90,90,.9); z-index: 2;
+    }
+    .prog i {
+      display: block; height: 100%; background: #E50914;
+      -webkit-transform-origin: left center; transform-origin: left center;
+    }
+    .cap { display: none; }
+    /* watch markers (local only): progress bar from the app history / 已看完 tag from local marks */
+    .wbar { position: absolute; left: 9px; right: 9px; bottom: 8px; height: 3px; border-radius: 999px; background: rgba(255,255,255,.28); z-index: 3; overflow: hidden; pointer-events: none; }
+    .wbar i { display: block; height: 100%; border-radius: 999px; background: #E50914; }
+    .wdone { position: absolute; top: 7px; right: 7px; z-index: 3; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; font-weight: 700; color: #46d369; background: rgba(20,20,20,.7); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); pointer-events: none; }
+    .card:focus .wbar, .card:hover .wbar { opacity: 0; }
+    html.kbd .card:focus, html.tv .card:focus { z-index: 5; }
+    html.kbd .card:focus .poster, html.tv .card:focus .poster { -webkit-transform: scale(1.08); transform: scale(1.08); }
+    html.kbd .card:focus .glow, html.kbd .card:focus .mini, html.kbd .card:focus .shadow,
+    html.tv .card:focus .glow, html.tv .card:focus .mini, html.tv .card:focus .shadow { opacity: 1; }
+    @media (hover: hover) {
+      .card:hover { z-index: 5; }
+      .card:hover .poster { -webkit-transform: scale(1.08); transform: scale(1.08); }
+      .card:hover .mini, .card:hover .shadow { opacity: 1; }
+    }
+    .card.skel .poster { -webkit-animation: pulse 1.2s ease-in-out infinite; animation: pulse 1.2s ease-in-out infinite; }
+    @-webkit-keyframes pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+    @keyframes pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+    /* continue watching: progress line sits under the poster art */
+    .card-cw .mini { padding-bottom: 12px; }
+
+    /* Top 10: big outlined numerals beside the posters */
+    .card-top {
+      width: 24vw;
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: flex-end; align-items: flex-end;
+    }
+    .card-top .rank {
+      -webkit-flex: none; flex: none;
+      width: 9vw;
+      margin-right: -1.2vw;
+      text-align: right;
+      font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 900;
+      font-size: 17vw;
+      line-height: .76;
+      letter-spacing: -1.4vw;
+      color: #141414;
+      -webkit-text-stroke: 3px #5c5c5c;
+      text-shadow: none;
+      position: relative; z-index: 0;
+      -webkit-user-select: none; user-select: none;
+    }
+    .card-top.r10 { width: 28.5vw; }
+    .card-top.r10 .rank { width: 13.5vw; letter-spacing: -2.2vw; }
+    .card-top .poster-box { -webkit-flex: none; flex: none; width: 15vw; position: relative; z-index: 1; }
+
+    /* search results */
+    .results { padding: 76px 4% 20px; padding-top: calc(76px + var(--active-safe-top)); }
+    .results[hidden], .main[hidden] { display: none; }
+    .results h2 { margin: 0 0 6px; font-size: 18px; color: #e5e5e5; font-weight: 700; }
+    .results .note { color: #808080; font-size: 13px; margin-bottom: 12px; }
+    .grid { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin-right: -8px; }
+    .grid .card { width: 15.4%; margin: 0 1.2% 22px 0; }
+
+    /* toast + browser hint */
+    .toast {
+      position: fixed; left: 50%; bottom: 40px; bottom: calc(40px + var(--safe-bottom));
+      z-index: 90;
+      max-width: 80%;
+      padding: 10px 16px;
+      background: rgba(40,40,40,.96); color: #fff; border-radius: 4px; font-size: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.6);
+      opacity: 0;
+      -webkit-transform: translate(-50%, 12px); transform: translate(-50%, 12px);
+      -webkit-transition: opacity .25s, -webkit-transform .25s; transition: opacity .25s, transform .25s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; -webkit-transform: translate(-50%, 0); transform: translate(-50%, 0); }
+    .hint {
+      margin: 10px 4% 18px;
+      padding: 10px 14px;
+      border-left: 3px solid #E50914;
+      background: #1f1f1f;
+      color: #b3b3b3; font-size: 13px;
+    }
+    .hint[hidden] { display: none; }
+    .hint b { color: #fff; }
+    .foot { color: #595959; font-size: 12px; margin: 26px 4% 0; }
+
+    /* details modal */
+    .eps:empty { margin-top: 0; }
+    .eps { margin-top: 14px; }
+    .eps span { display: inline-block; min-width: 46px; text-align: center; padding: 6px 4px; margin: 0 6px 6px 0; background: #2f2f2f; border-radius: 3px; color: #ccc; font-size: 12px; }
+
+    /* ---------- breakpoints ---------- */
+    @media (min-width: 700px) {
+      .nav { display: block; }
+    }
+    @media (min-width: 1400px) {
+      .card { width: 12.6vw; }
+      .card-top { width: 20.6vw; }
+      .card-top .poster-box { width: 12.6vw; }
+      .card-top .rank { width: 8vw; font-size: 14.5vw; letter-spacing: -1.2vw; }
+      .card-top.r10 { width: 24.6vw; }
+      .card-top.r10 .rank { width: 12vw; letter-spacing: -1.9vw; }
+      .row-title { font-size: 1.45vw; }
+      .hero-title { font-size: 4.8vw; }
+      .hero-desc { font-size: 1.3vw; }
+    }
+    @media (max-width: 899px) {
+      .card { width: 21vw; }
+      .card-top { width: 33vw; }
+      .card-top .poster-box { width: 21vw; }
+      .card-top .rank { width: 13vw; font-size: 24vw; letter-spacing: -2vw; margin-right: -1.5vw; }
+      .card-top.r10 { width: 40vw; }
+      .card-top.r10 .rank { width: 20vw; letter-spacing: -3vw; }
+      .hero-title { font-size: 44px; }
+      .hero-body { width: 56%; bottom: 26%; }
+      .grid .card { width: 23.8%; }
+    }
+    /* phone portrait: Netflix-mobile style poster billboard */
+    @media (max-width: 599px) {
+      body { font-size: 13px; }
+      .topbar { height: 50px; }
+      .brand { font-size: 26px; }
+      .sinput { width: 180px; }
+      .search.open .sbtn { right: 146px; }
+      .hero { height: 128vw; max-height: 78vh; min-height: 0; }
+      .hero-vig {
+        background:
+          linear-gradient(180deg, rgba(0,0,0,.35) 0, rgba(0,0,0,0) 22%, rgba(20,20,20,0) 50%, rgba(20,20,20,.85) 82%, #141414 100%);
+      }
+      .hero-body { left: 5%; right: 5%; width: auto; bottom: 7%; text-align: center; }
+      .hero-tag { -webkit-justify-content: center; justify-content: center; }
+      .hero-title { font-size: 30px; margin-bottom: 8px; }
+      .hero-meta { font-size: 13px; }
+      .hero-desc { display: none; }
+      .btn { height: 38px; line-height: 38px; font-size: 15px; padding: 0 20px 0 16px; margin: 0 4px; }
+      .rows { margin-top: 4px; }
+      .row-title { font-size: 16px; }
+      .row-scroll { padding: 8px 0 14px 4%; }
+      .card { width: 29vw; margin-right: 6px; }
+      .card-top { width: 44vw; }
+      .card-top .poster-box { width: 29vw; }
+      .card-top .rank { width: 17vw; font-size: 31vw; letter-spacing: -3vw; margin-right: -2vw; -webkit-text-stroke: 2px #5c5c5c; }
+      .card-top.r10 { width: 54vw; }
+      .card-top.r10 .rank { width: 27vw; letter-spacing: -4vw; }
+      .grid .card { width: 31.3%; margin-right: 2%; }
+      html:not(.tv) .card .cap {
+        display: block; margin-top: 5px; font-size: 12px; color: #b3b3b3;
+        overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      }
+      html:not(.tv) .card-top .cap { display: none; }
+    }
+    /* TV / leanback: bigger focus treatment, no hover affordances */
+    html.tv .card { width: 13vw; }
+    html.tv .card-top { width: 21vw; }
+    html.tv .card-top .poster-box { width: 13vw; }
+    html.tv .card-top .rank { width: 8.5vw; font-size: 15vw; letter-spacing: -1.3vw; }
+    html.tv .card-top.r10 { width: 25vw; }
+    html.tv .card-top.r10 .rank { width: 12.5vw; letter-spacing: -2vw; }
+    html.tv .card:focus .poster { -webkit-transform: scale(1.12); transform: scale(1.12); }
+    html.tv .hero { height: 50vw; max-height: 72vh; }
+    html.tv .rows { margin-top: -7vw; }
+
+    /* ---------- v2 (2026-10-03): display font + iOS-style rounding + 片库 ---------- */
+    /* WEXTitle: small UI-string subset of ZCOOL QingKe HuangYou (fonts/wext-v1.woff2, immutable). Dynamic titles use the system font. */
+    .brand { font-family: "WEXTitle", -apple-system, "PingFang SC", sans-serif; font-weight: 400; letter-spacing: 1px; -webkit-transform: none; transform: none; font-size: 32px; }
+    .row-title, .results h2 { font-family: "WEXTitle", -apple-system, "PingFang SC", "Noto Sans SC", sans-serif; font-weight: 400; letter-spacing: 1px; }
+    .topbar.solid:before { background: rgba(20,20,20,.72); }
+    @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+      .topbar.solid:before { -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); background: rgba(20,20,20,.55); }
+    }
+    .btn { border-radius: 999px !important; padding-left: 26px; padding-right: 28px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+    html.kbd .btn:focus, html.tv .btn:focus { box-shadow: 0 0 0 3px #141414, 0 0 0 6px #fff !important; outline: none; }
+    .poster, .card.skel .poster { border-radius: 14px !important; overflow: hidden; box-shadow: 0 8px 22px rgba(0,0,0,.45); }
+    .card { border-radius: 14px; }
+    html.kbd .card:focus .poster, html.tv .card:focus .poster { box-shadow: 0 0 0 3px #fff, 0 12px 28px rgba(0,0,0,.6) !important; outline: none; }
+    .prog, .prog i { border-radius: 999px; }
+    .hero-meta .pill, .eps span { border-radius: 999px !important; }
+    .hero-tag .t10 { border-radius: 6px; }
+    .sinput { border-radius: 999px !important; }
+    .sbtn { border-radius: 999px !important; }
+    html.kbd .sbtn:focus, html.tv .sbtn:focus { box-shadow: 0 0 0 3px #fff; }
+    .nav button { border-radius: 999px; padding: 6px 12px; margin-right: 6px; }
+    .nav button:focus { text-decoration: none; box-shadow: none; }
+    .nav button { -webkit-transition: background .18s, -webkit-transform .18s, -webkit-filter .18s; transition: background .18s, transform .18s, filter .18s; }
+    html.kbd .nav button:focus, html.tv .nav button:focus { background: rgba(255,255,255,.2); color: #fff; -webkit-transform: scale(1.08); transform: scale(1.08); }
+    html.kbd .nav button.on:focus, html.tv .nav button.on:focus { background: rgba(229,9,20,.95); -webkit-filter: brightness(1.15); filter: brightness(1.15); box-shadow: 0 0 14px rgba(229,9,20,.65); }
+    .toast, .hint { border-radius: 16px !important; }
+    .arrow { border-radius: 14px; }
+    .chips { margin: 4px 0 14px; }
+    .chip { display: inline-block; padding: 7px 18px; margin: 0 8px 8px 0; border-radius: 999px; background: rgba(255,255,255,.12); color: #e5e5e5; font-size: 14px; -webkit-transition: background .2s; transition: background .2s; }
+    .chip.on { background: #fff; color: #141414; font-weight: 700; }
+    html.kbd .chip:focus, html.tv .chip:focus { box-shadow: 0 0 0 3px #141414, 0 0 0 5px #fff; }
+    /* ---------- v2 mobile (phone portrait): layout only, image/button sizes unchanged ---------- */
+    @media (max-width: 699px) {
+      .topbar { padding: 0 12px 0 16px; padding-top: var(--active-safe-top); }
+      .brand { margin-right: 10px; }
+      .nav {
+        display: block; -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0;
+        overflow-x: auto; overflow-y: hidden; white-space: nowrap; -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; margin-right: 6px;
+        -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent);
+      }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav button { display: inline-block; font-size: 14px; padding: 7px 12px; margin-right: 2px; color: #d0d0d0; }
+      .nav button.on { color: #fff; background: rgba(229,9,20,.9); }
+      .spacer { display: none; }
+      .search.open { position: absolute; right: 12px; top: 8px; top: calc(8px + var(--active-safe-top)); }
+      .app { padding-bottom: 24px; padding-bottom: calc(24px + var(--safe-bottom)); }
+      .hero-body { left: 16px; right: 16px; }
+      .row { margin-bottom: 10px; }
+      .row-title { font-size: 18px; margin: 0 16px; }
+      .row-scroll { padding-left: 16px; }
+      .results { padding: 70px 16px 20px; padding-top: calc(70px + var(--active-safe-top)); }
+      .results h2 { font-size: 24px; }
+      .grid { margin-right: 0; }
+      .grid .card { width: 31.6%; margin: 0 2.6% 16px 0; }
+      .grid .card:nth-child(3n) { margin-right: 0; }
+      .chips { white-space: nowrap; overflow-x: auto; }
+      .foot { margin: 26px 16px 0; }
+    }
+    /* ---------- v2c: gradient-blur top nav (always on) + 收藏 button ---------- */
+    .topbar { background: none !important; }
+    .topbar:before, .topbar.solid:before {
+      opacity: 1 !important; bottom: -36px;
+      background: linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.38) 55%, rgba(0,0,0,0) 100%) !important;
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+      pointer-events: none;
+    }
+    .topbar:after, .tb-blur {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; pointer-events: none;
+    }
+    .topbar:after {
+      bottom: 0; z-index: -2;
+      -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 100%);
+    }
+    .tb-blur {
+      bottom: -36px; z-index: -3;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.5) 60%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.5) 60%, transparent 100%);
+    }
+    /* ---------- logo is the home button (touch + remote focus) ---------- */
+    .brand { background: none; border: 0; padding: 0 4px; cursor: pointer; border-radius: 10px; }
+    html.kbd .brand:focus, html.tv .brand:focus { box-shadow: 0 0 0 3px #fff; }
+    .hero-tag .htag:empty { display: none; }
+    .hero-tag .htag { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.16);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+  </style>
+  <style>
+    /* ================= WEX (Douban-driven) additions ================= */
+    @font-face { font-family: "WEXTitle"; src: url("fonts/wext-v1.woff2") format("woff2"); font-display: swap; }
+    .brand { color: #E50914; font-size: 30px; letter-spacing: 2px; }
+    .hero-title { font-weight: 900; letter-spacing: .03em; text-shadow: 0 3px 18px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55); }
+    .poster { padding-top: 142%; }
+    .btn[hidden], .chip[hidden], .grid[hidden], .note[hidden] { display: none !important; }
+    #resTitle { font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif; font-weight: 800; letter-spacing: 0; }
+    /* hero: sharp portrait poster on phones; blurred poster backdrop + sharp poster card elsewhere */
+    .hero-poster { display: none; }
+    .hero.blur .hero-bg { -webkit-filter: blur(26px) brightness(.62) saturate(1.2); filter: blur(26px) brightness(.62) saturate(1.2); -webkit-transform: scale(1.18); transform: scale(1.18); }
+    .hero.blur .hero-poster {
+      display: block; position: absolute; right: 7%; top: 50%; z-index: 2;
+      width: 19vw; max-width: 300px; height: 0; padding-top: min(28.5vw, 450px);
+      -webkit-transform: translateY(-46%); transform: translateY(-46%);
+      border-radius: 18px; overflow: hidden; background: #222;
+      box-shadow: 0 30px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.08);
+    }
+    html.no-css-functions .hero.blur .hero-poster { padding-top: 28.5vw; }
+    .hero-poster img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; -webkit-transition: opacity .5s; transition: opacity .5s; }
+    .hero-poster img.ok { opacity: 1; }
+    .hero.blur .hero-body { width: 52%; bottom: 24%; }
+    .hero-meta .gen { color: #d6d6d6; margin-right: 10px; }
+    .dscore { position: absolute; top: 7px; left: 7px; z-index: 3; padding: 1px 7px; border-radius: 999px; font-size: 11px; line-height: 16px; font-weight: 700; color: #46d369; background: rgba(10,10,10,.72); pointer-events: none; }
+    .wnow { color: #ff5a63 !important; font-weight: 700; }
+    /* search: app-search action */
+    .appsearch { display: inline-block; margin: 2px 8px 14px 0; padding: 9px 20px; border-radius: 999px; background: #E50914; color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 6px 18px rgba(229,9,20,.3); }
+    html.kbd .appsearch:focus, html.tv .appsearch:focus { box-shadow: 0 0 0 3px #141414, 0 0 0 5px #fff; }
+    .chips + .chips { margin-top: -6px; }
+    .chip small { font-size: 11px; opacity: .7; margin-left: 4px; }
+    .grid .card { margin-bottom: 18px; }
+    .loadmore { width: 100%; text-align: center; color: #808080; font-size: 13px; padding: 10px 0 20px; }
+    @media (max-width: 899px) {
+      .hero.blur .hero-poster { width: 24vw; padding-top: 36vw; right: 6%; }
+      .hero.blur .hero-body { width: 58%; }
+    }
+    @media (max-width: 599px) {
+      .hero.blur .hero-poster { display: none; }
+      .dscore { top: 5px; left: 5px; font-size: 10px; padding: 0 6px; }
+    }
+    html.tv .hero.blur .hero-poster { width: 17vw; padding-top: 25.5vw; }
+  </style>
+
+  <style>
+    /* ================= Infuse-style full-screen detail page (#modal.dp, own #detail hash level) ================= */
+    html.dp-on, html.dp-on body { overflow: hidden; }
+    .dp { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 80; background: #050505; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+      opacity: 0; visibility: hidden; pointer-events: none; -webkit-transition: opacity .26s ease, visibility 0s linear .26s; transition: opacity .26s ease, visibility 0s linear .26s; }
+    .dp.open { opacity: 1; visibility: visible; pointer-events: auto; -webkit-transition: opacity .26s ease, visibility 0s; transition: opacity .26s ease, visibility 0s; }
+    .dp-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; z-index: 0; background: #111; pointer-events: none; }
+    .dp-bg canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; -webkit-transition: opacity .5s; transition: opacity .5s; }
+    .dp-bg canvas.ok { opacity: 1; }
+    .dp-shade { position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.42) 45%, rgba(0,0,0,.05) 100%), linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.22) 40%, rgba(0,0,0,.9) 84%, #000 100%); }
+    .dp-x { position: fixed; z-index: 4; top: 14px; top: calc(14px + var(--active-safe-top, 0px)); left: 3%; height: 40px; width: 40px; padding: 0; text-align: center; border-radius: 50%; background: rgba(0,0,0,.42); color: #fff; font-size: 15px; font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); -webkit-transition: -webkit-transform .15s; transition: transform .15s; }
+    .dp-x b { font-size: 24px; line-height: 1; vertical-align: -2px; margin-right: 0; font-weight: 400; }
+    .dp-in { position: relative; z-index: 1; padding: 78px 5% 48px; padding-top: calc(78px + var(--active-safe-top, 0px)); padding-bottom: calc(48px + var(--safe-bottom, 0px));
+      opacity: 0; -webkit-transform: scale(1.035); transform: scale(1.035); -webkit-transform-origin: 50% 0; transform-origin: 50% 0;
+      -webkit-transition: opacity .32s ease, -webkit-transform .4s cubic-bezier(.2,.8,.2,1); transition: opacity .32s ease, transform .4s cubic-bezier(.2,.8,.2,1); }
+    .dp.open .dp-in { opacity: 1; -webkit-transform: none; transform: none; }
+    .dp-head { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: start; -webkit-align-items: flex-start; align-items: flex-start; }
+    .dp-poster { position: relative; -webkit-flex: 0 0 24%; flex: 0 0 24%; max-width: 330px; margin-right: 4%; border-radius: 16px; overflow: hidden; background: #222;
+      box-shadow: 0 26px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.07); }
+    .dp-poster:before { content: ""; display: block; padding-top: 148%; }
+    .dp-poster img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; -webkit-transition: opacity .35s; transition: opacity .35s; }
+    .dp-poster img.ok { opacity: 1; }
+    .dp-poster .ph { position: absolute; left: 0; right: 0; top: 42%; padding: 0 10px; text-align: center; color: #777; font-size: 14px; }
+    .dp-info { -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; padding-top: .5%; }
+    .dp-info h1 { margin: 0 0 6px; font-size: 44px; font-size: clamp(28px, 3.5vw, 64px); font-weight: 900; line-height: 1.12; letter-spacing: 0; text-shadow: 0 2px 14px rgba(0,0,0,.45); }
+    .dp-orig { color: #a8a8a8; font-size: 15px; margin-bottom: 10px; }
+    .dp-orig:empty { display: none; }
+    .dp-meta { color: #e2e2e2; font-size: 16px; line-height: 1.5; margin-bottom: 14px; }
+    .dp-meta span + span:before { content: "·"; margin: 0 8px; color: #8d8d8d; }
+    .dp-rate { margin-bottom: 18px; }
+    .rpill { display: inline-block; vertical-align: middle; height: 32px; line-height: 32px; padding: 0 14px 0 6px; margin: 0 8px 8px 0; border-radius: 999px; background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); font-size: 14px; color: #ddd; white-space: nowrap; }
+    .rpill .db { display: inline-block; height: 22px; line-height: 22px; min-width: 22px; padding: 0 5px; border-radius: 999px; background: #00a84f; color: #fff; font-weight: 800; font-size: 12px; text-align: center; vertical-align: 1px; }
+    .rpill b { color: #fff; font-size: 17px; margin: 0 7px 0 7px; }
+    .rpill em { font-style: normal; color: #a9a9a9; font-size: 12px; margin-left: 8px; }
+    .rpill.plain { padding-left: 14px; }
+    .stars { position: relative; display: inline-block; color: rgba(255,255,255,.22); font-size: 13px; letter-spacing: 1px; line-height: 1; vertical-align: 0; }
+    .stars i { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #ffb92e; font-style: normal; }
+    .dp-btns { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-box-align: center; -webkit-align-items: center; align-items: center; margin-bottom: 14px; }
+    .dp .dp-btns .btn { height: 50px; line-height: 50px; margin: 0 12px 26px 0; font-size: 17px; }
+    .dp #sheetPlay, .dp #sheetResume { background: #fff; color: #000; padding: 0 30px 0 26px; }
+    .dp #sheetResume:not([hidden]) + #sheetPlay, .dp #sheetAlt { background: rgba(255,255,255,.16); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.32); }
+    .dp .dp-round { position: relative; width: 50px; padding: 0 !important; text-align: center; border-radius: 50% !important; background: rgba(255,255,255,.16); color: #fff; font-size: 21px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.32); }
+    .dp .dp-round:after { content: attr(data-l); position: absolute; left: 50%; top: 56px; -webkit-transform: translateX(-50%); transform: translateX(-50%); white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 400; color: #bdbdbd; }
+    .dp #sheetFav.on { background: rgba(229,9,20,.92); box-shadow: none; }
+    .dp #sheetDone.on { background: #fff; color: #1f9d48; box-shadow: none; }
+    .dp-syn { max-width: 860px; }
+    .dp-syn p { margin: 0; color: #d4d4d4; font-size: 16px; line-height: 1.7; white-space: pre-line; }
+    .dp-syn p.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .dp-more { margin-top: 6px; padding: 3px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; color: #fff; background: rgba(255,255,255,.12); }
+    .dp-more[hidden], .dp-sec[hidden] { display: none; }
+    .dp-sec { margin-top: 34px; }
+    .dp-sec h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; letter-spacing: 0; color: #f1f1f1; }
+    .dp-scroll { display: -webkit-box; display: -webkit-flex; display: flex; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; margin: 0 -5.3%; padding: 12px 5.3% 12px; scrollbar-width: none; }
+    .dp-scroll::-webkit-scrollbar { display: none; }
+    .dp-cast { -webkit-flex: 0 0 auto; flex: 0 0 auto; width: 104px; margin-right: 16px; text-align: center; border-radius: 14px; padding: 4px 0; }
+    .dp-av { display: block; position: relative; width: 84px; height: 84px; margin: 0 auto 9px; border-radius: 50%; overflow: hidden; background: #2b2b2b; box-shadow: 0 8px 18px rgba(0,0,0,.45);
+      -webkit-transition: -webkit-transform .18s; transition: transform .18s; }
+    .dp-av span { display: block; position: absolute; left: 0; right: 0; top: 50%; margin-top: -14px; font-size: 24px; line-height: 28px; color: #8a8a8a; font-weight: 700; }
+    .dp-av img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; -webkit-transition: opacity .3s; transition: opacity .3s; }
+    .dp-av img.ok { opacity: 1; }
+    .dp-cn, .dp-cr { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dp-cn { font-size: 14px; color: #f0f0f0; font-weight: 600; }
+    .dp-cr { font-size: 12px; color: #9a9a9a; margin-top: 2px; }
+    .dp-rec { -webkit-flex: 0 0 auto; flex: 0 0 auto; width: 136px; margin-right: 14px; text-align: left; }
+    .dp-rp { display: block; position: relative; padding-top: 148%; border-radius: 12px; overflow: hidden; background: #222; box-shadow: 0 10px 22px rgba(0,0,0,.45);
+      -webkit-transition: -webkit-transform .18s; transition: transform .18s; }
+    .dp-rp img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; -webkit-transition: opacity .3s; transition: opacity .3s; }
+    .dp-rp img.ok { opacity: 1; }
+    .dp-rp .ph { position: absolute; left: 6px; right: 6px; top: 40%; text-align: center; font-size: 12px; color: #777; }
+    .dp-rp .dscore { top: 6px; left: 6px; }
+    .dp-rt { display: block; margin-top: 8px; font-size: 13px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dp-grid { display: -ms-grid; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); grid-gap: 16px 30px; margin-top: 10px; }
+    .dp-kv { min-width: 0; }
+    .dp-kv dt { color: #8c8c8c; font-size: 13px; margin-bottom: 3px; }
+    .dp-kv dd { margin: 0; color: #e8e8e8; font-size: 15px; line-height: 1.55; word-break: break-word; }
+    #dpInfoSec { border-radius: 16px; margin-left: -14px; margin-right: -14px; padding: 6px 14px 12px; }
+    html.kbd #dpInfoSec:focus, html.tv #dpInfoSec:focus { box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 0 22px rgba(255,255,255,.2); background: rgba(255,255,255,.04); }
+    .dp-note { margin-top: 30px; color: #6f6f6f; font-size: 12px; }
+    /* focus (keyboard / remote): scale + white ring + soft glow */
+    html.kbd .dp-x:focus, html.tv .dp-x:focus { background: #fff; color: #000; -webkit-transform: scale(1.06); transform: scale(1.06); outline: none; }
+    html.kbd .dp .btn:focus, html.tv .dp .btn:focus { -webkit-transform: scale(1.08); transform: scale(1.08); box-shadow: 0 0 0 3px #000, 0 0 0 6px #fff, 0 0 26px rgba(255,255,255,.4) !important; outline: none; }
+    html.kbd .dp-more:focus, html.tv .dp-more:focus { background: #fff; color: #000; box-shadow: 0 0 0 3px rgba(255,255,255,.3); outline: none; }
+    .dp-cast:focus, .dp-rec:focus { outline: none; }
+    html.kbd .dp-cast:focus .dp-av, html.tv .dp-cast:focus .dp-av { -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: 0 0 0 3px #fff, 0 0 24px rgba(255,255,255,.45); }
+    html.kbd .dp-cast:focus .dp-cn, html.tv .dp-cast:focus .dp-cn { color: #fff; }
+    html.kbd .dp-rec:focus .dp-rp, html.tv .dp-rec:focus .dp-rp { -webkit-transform: scale(1.08); transform: scale(1.08); box-shadow: 0 0 0 3px #fff, 0 14px 30px rgba(0,0,0,.6), 0 0 24px rgba(255,255,255,.3); }
+    html.kbd .dp-rec:focus .dp-rt, html.tv .dp-rec:focus .dp-rt { color: #fff; font-weight: 700; }
+    /* phone: poster + title stacked over the backdrop */
+    @media (max-width: 599px) {
+      .dp-in { padding: 64px 18px 36px; padding-top: calc(64px + var(--active-safe-top, 0px)); }
+      .dp-head { display: block; text-align: center; }
+      .dp-poster { width: 46%; max-width: 210px; margin: 0 auto 18px; }
+      .dp-info h1 { font-size: 26px; }
+      .dp-meta { font-size: 14px; }
+      .dp-btns { -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+      .dp .dp-btns .btn:not(.dp-round) { -webkit-flex: 1 1 100%; flex: 1 1 100%; margin: 0 0 10px; text-align: center; }
+      .dp .dp-round { margin: 4px 14px 26px !important; }
+      .dp-syn { text-align: left; }
+      .dp-scroll { margin: 0 -18px; padding: 10px 18px; }
+      .dp-cast { width: 84px; margin-right: 12px; }
+      .dp-av { width: 68px; height: 68px; }
+      .dp-rec { width: 108px; margin-right: 10px; }
+      .dp-grid { grid-template-columns: 1fr 1fr; grid-gap: 14px 16px; }
+      .dp-shade { background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,.45) 35%, rgba(0,0,0,.9) 70%, #000 100%); }
+    }
+    /* ================= quick actions (long OK / MENU on a card; own #qa hash level) ================= */
+    .qa { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 130; background: rgba(0,0,0,.62); display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+    .qa[hidden] { display: none; }
+    .qa-box { width: 84%; max-width: 380px; max-height: 74vh; overflow-y: auto; padding: 20px 18px 12px; border-radius: 22px; background: rgba(36,36,38,.98); box-shadow: 0 24px 60px rgba(0,0,0,.65); }
+    .qa-box h4 { margin: 0 0 14px; font-size: 18px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qa-box .btn { display: block; width: 100%; margin: 0 0 10px; height: 46px; line-height: 46px; text-align: center; background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
+    .qa-box .btn:first-of-type { background: #fff; color: #000; }
+    /* ================= global focus visibility (keyboard / remote) ================= */
+    html.kbd .sinput:focus, html.tv .sinput:focus { box-shadow: 0 0 0 2px #fff, 0 0 16px rgba(255,255,255,.35); }
+    html.kbd .cfm-btns .btn:focus, html.tv .cfm-btns .btn:focus, html.kbd .qa-box .btn:focus, html.tv .qa-box .btn:focus { -webkit-transform: scale(1.05); transform: scale(1.05); box-shadow: 0 0 0 3px #222, 0 0 0 6px #fff, 0 0 22px rgba(255,255,255,.35) !important; }
+    html.kbd .card:focus .poster, html.tv .card:focus .poster { box-shadow: 0 0 0 3px #fff, 0 0 26px rgba(255,255,255,.32), 0 12px 28px rgba(0,0,0,.6) !important; }
+    html.kbd :focus, html.tv :focus { outline: none; }
+    /* ================= 10-foot TV layout (html.tv: leanback client, TV user agent, ?tv=1, or wide screen without touch/mouse) ================= */
+    html.tv .topbar { padding-left: 4.5%; padding-right: 4.5%; }
+    html.tv .brand { font-size: 2.5vw; }
+    html.tv .nav button { font-size: 1.45vw; padding: .45vw 1.15vw; margin-right: .5vw; border-radius: 999px; }
+    html.tv .sbtn { width: 3vw; height: 3vw; }
+    html.tv .sinput { width: 24vw; height: 3vw; font-size: 1.35vw; }
+    html.tv .row-title { font-size: 1.85vw; margin-bottom: .5vw; }
+    html.tv .rmng { font-size: 1.15vw; padding: .3vw 1vw; }
+    html.tv .hfav { width: 2.6vw; height: 2.6vw; }
+    html.tv .hfav svg { width: 1.3vw; height: 1.3vw; }
+    html.tv .btn { height: 3.6vw; line-height: 3.6vw; font-size: 1.45vw; padding: 0 2.2vw 0 1.9vw; }
+    html.tv .hero-meta { font-size: 1.3vw; }
+    html.tv .hero-desc { font-size: 1.35vw; line-height: 1.6; }
+    html.tv .hero-title { font-size: 3.6vw; }
+    html.tv .results { padding-left: 4.5%; padding-right: 4.5%; }
+    html.tv .results h2 { font-size: 2.4vw; }
+    html.tv .chip { font-size: 1.3vw; padding: .45vw 1.3vw; margin: 0 .7vw .7vw 0; }
+    html.tv .note, html.tv .hint, html.tv .foot { font-size: 1.1vw; }
+    html.tv .appsearch { font-size: 1.4vw; padding: .7vw 1.7vw; }
+    html.tv .grid .card { width: 11.3%; margin: 0 1.3% 2vw 0; }
+    html.tv .grid .card:focus { z-index: 6; }
+    html.tv .card .cap, html.tv .mname { font-size: 1.05vw; }
+    html.tv .cfm-box, html.tv .qa-box { max-width: 34vw; }
+    html.tv .cfm-box p, html.tv .qa-box h4 { font-size: 1.5vw; }
+    html.tv .qa-box .btn { height: 3.4vw; line-height: 3.4vw; }
+    html.tv .toast { font-size: 1.3vw; }
+    html.tv .dp-in { padding: 9vh 6% 6vh; }
+    html.tv .dp-x { top: 3vh; left: 3%; height: 3.2vw; width: 3.2vw; padding: 0; font-size: 0; }
+    html.tv .dp-x b { font-size: 1.8vw; }
+    html.tv .dp-poster { -webkit-flex-basis: 22vw; flex-basis: 22vw; max-width: none; }
+    html.tv .dp-info h1 { font-size: 3.4vw; }
+    html.tv .dp-orig { font-size: 1.25vw; }
+    html.tv .dp-meta { font-size: 1.4vw; }
+    html.tv .rpill { height: 2.5vw; line-height: 2.5vw; font-size: 1.15vw; padding-right: 1.2vw; }
+    html.tv .rpill b { font-size: 1.4vw; }
+    html.tv .rpill .db { height: 1.8vw; line-height: 1.8vw; min-width: 1.8vw; font-size: 1vw; }
+    html.tv .stars, html.tv .rpill em { font-size: 1vw; }
+    html.tv .dp .dp-btns .btn { height: 3.8vw; line-height: 3.8vw; font-size: 1.45vw; margin-bottom: 2.6vw; }
+    html.tv .dp .dp-round { width: 3.8vw; font-size: 1.6vw; }
+    html.tv .dp .dp-round:after { top: 4.3vw; font-size: 1vw; }
+    html.tv .dp-syn { max-width: 56vw; }
+    html.tv .dp-syn p { font-size: 1.35vw; }
+    html.tv .dp-more { font-size: 1.15vw; padding: .3vw 1vw; }
+    html.tv .dp-sec h3 { font-size: 1.75vw; }
+    html.tv .dp-scroll { margin: 0 -6.4%; padding: 1.2vw 6.4%; }
+    html.tv .dp-cast { width: 9vw; margin-right: 1.4vw; }
+    html.tv .dp-av { width: 7vw; height: 7vw; }
+    html.tv .dp-cn { font-size: 1.15vw; }
+    html.tv .dp-cr { font-size: 1vw; }
+    html.tv .dp-rec { width: 11vw; margin-right: 1.3vw; }
+    html.tv .dp-rt { font-size: 1.1vw; }
+    html.tv .dp-grid { grid-template-columns: repeat(4, 1fr); grid-gap: 1.4vw 2.4vw; }
+    html.tv .dp-kv dt { font-size: 1.05vw; }
+    html.tv .dp-kv dd { font-size: 1.25vw; }
+  </style>
+  <style>
+    /* ================= v3: Apple-TV style hero · TV performance + 10-foot layout · 收藏 row · 最近看过 ================= */
+    .hero-art { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;
+      /* projector-house ambience: layered cinematic gradients (no repeated cover art) */
+      background:
+        radial-gradient(120% 95% at 74% 20%, rgba(102,60,62,.42) 0%, rgba(0,0,0,0) 58%),
+        radial-gradient(90% 70% at 16% 82%, rgba(38,44,72,.34) 0%, rgba(0,0,0,0) 62%),
+        linear-gradient(140deg, #1f1f27 0%, #101014 52%, #171019 100%); }
+    .hero .hero-bg { opacity: 0;
+      -webkit-filter: none !important; filter: none !important; -webkit-transform: none !important; transform: none !important;
+      -webkit-transition: opacity .9s ease; transition: opacity .9s ease; }
+    .hero .hero-bg.on { opacity: 1; }
+    /* Apple-style hero: full-bleed cropped blur + sharp rounded card anchored right (both layers share the
+       exact same absolute anchor, so crossfade never shifts and no duplicate can appear elsewhere) */
+    .hero.land .hero-bg { position: absolute; top: 20%; right: 4%; left: auto; bottom: auto;
+      width: auto; height: 60%; max-width: 62%;
+      object-fit: cover; border-radius: 16px;
+      -webkit-box-shadow: 0 28px 70px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+      box-shadow: 0 28px 70px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4); }
+    .hero.por .hero-bg { position: absolute; top: 0; left: 0; right: auto; bottom: auto;
+      width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 0;
+      -webkit-box-shadow: none; box-shadow: none; }
+    /* wide-but-short screens (phone landscape, small laptops): keep the copy clear of the floating nav */
+    @media (min-width: 700px) and (max-height: 860px) {
+      .hero.land { height: 72vh; min-height: 300px; }
+      .hero-title { font-size: 3.4vw; margin-bottom: 2.4vh; }
+      .hero.land .hero-body { bottom: calc(6vw + 16px); }
+      .hero .hero-desc { -webkit-line-clamp: 2; font-size: 15px; margin-bottom: 16px; }
+      .hero.land .hero-bg { top: 12%; height: 76%; }
+      .hero-credits { bottom: calc(6vw + 20px); font-size: 12px; }
+    }
+    .hero.land { height: 50vw; max-height: 86vh; min-height: 380px; }
+    .hero.land .hero-vig { background:
+      /* projector / flashlight beam: a soft light shaft sweeping from the card corner */
+      linear-gradient(112deg, rgba(0,0,0,0) 32%, rgba(255,246,228,.06) 45%, rgba(255,250,240,.025) 55%, rgba(0,0,0,0) 68%),
+      /* warm spotlight glow above the sharp card */
+      radial-gradient(64% 52% at 74% 14%, rgba(255,238,212,.11) 0%, rgba(255,238,212,0) 62%),
+      linear-gradient(180deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,.1) 10%, rgba(0,0,0,0) 18%),
+      linear-gradient(270deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.12) 14%, rgba(0,0,0,0) 26%),
+      linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.5) 30%, rgba(0,0,0,.08) 62%, rgba(0,0,0,0) 100%),
+      linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 20%, rgba(20,20,20,0) 45%, rgba(20,20,20,.6) 72%, rgba(20,20,20,.9) 90%, #141414 100%); }
+    .hero.land .hero-body { left: 4%; bottom: calc(9vw + 24px); width: 38%; }
+    /* Netflix-style tagline line removed for a cleaner hero (genre lives in the detail page) */
+    .hero-gen { display: none; }
+    .hero .hero-desc { -webkit-line-clamp: 3; margin-bottom: 24px; color: rgba(255,255,255,.92); }
+    /* Netflix hero shows title + tagline + synopsis + buttons only (brand row removed) */
+    .hero-tag { display: none; }
+    .hero .hero-meta { display: none; }
+    .btn.hround { width: 42px; padding: 0 !important; text-align: center; border-radius: 50% !important; background: rgba(255,255,255,.18); color: #fff; font-size: 18px; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.55); vertical-align: top; }
+    .btn.hround b { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700; }
+    .btn.hround.on { background: #fff; color: #1f9d48; box-shadow: none; }
+    /* Netflix buttons: white play pill + glass round ✓ / ⓘ */
+    .hero-btns .btn { height: 46px; line-height: 46px; font-size: 18px; padding: 0 24px 0 20px; border-radius: 999px; margin-right: 12px; }
+    .hero-btns .btn.hround { width: 46px; }
+    .hero-credits { position: absolute; right: 4%; bottom: calc(9vw + 28px); width: 26%; z-index: 2; text-align: right; color: rgba(255,255,255,.66); font-size: 13px; line-height: 1.6; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+    .hero-credits span { color: rgba(255,255,255,.45); }
+    .hero-credits .hcast { color: rgba(255,255,255,.86); padding: 2px 4px; margin: 0 -2px; border-radius: 4px; }
+    .hero-credits .csep { color: rgba(255,255,255,.5); margin: 0 1px; }
+    @media (hover: hover) { .hero-credits .hcast:hover { color: #fff; background: rgba(255,255,255,.12); } }
+    html.kbd .hero-credits .hcast:focus, html.tv .hero-credits .hcast:focus {
+      color: #fff; background: rgba(255,255,255,.16); box-shadow: 0 0 0 2px rgba(255,255,255,.9); outline: none;
+    }
+    .hero.por .hero-credits, .hero.por .hero-gen { display: none; }
+    @media (max-width: 699px) { .hero.land { height: 72vw; } .hero.land .hero-body { width: 72%; bottom: 16%; } .hero.land .hero-credits { display: none; } }
+    @media (min-width: 1400px) { .hero-gen { font-size: 1.5vw; } }
+    @media (max-width: 599px) {
+      .hero-gen { font-size: 15px; margin-bottom: 10px; }
+      .hero-btns .btn { height: 40px; line-height: 40px; font-size: 15px; padding: 0 18px 0 15px; margin-right: 8px; }
+      .hero-btns .btn.hround { width: 40px; }
+    }
+    /* 最近看过 / 收藏 row */
+    .cap2 { display: none; }
+    #histGrid .cap, #histGrid .cap2 { display: block; margin-top: 5px; font-size: 12px; color: #b3b3b3; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    #histGrid .cap { color: #eee; font-size: 13px; }
+    #histGrid .cap2 { margin-top: 1px; color: #ff6b73; }
+    #histGrid .mini { display: none; }
+    /* detail page: no Douban image in CSS filters any more (tiny canvas, upscaled = cheap soft blur) */
+    .dp-bg canvas { -webkit-transform: scale(1.06); transform: scale(1.06); }
+
+    /* ---------- TV (html.tv): cheap effects only ---------- */
+    /* top nav keeps its gradient blur: ONE backdrop-filter layer, fixed height, gradient mask, paint-contained, never animated */
+    html.tv .topbar { height: 8.5vh; padding: 0 5%; contain: layout paint; }
+    html.tv .tb-blur { display: none; }
+    html.tv .topbar:before, html.tv .topbar.solid:before { bottom: 0 !important; -webkit-transition: none; transition: none; }
+    html.tv .topbar:after { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+    html.tv .nav button { -webkit-transition: background .15s, -webkit-transform .15s; transition: background .15s, transform .15s; }
+    html.tv .nav button.on { background: #E50914; color: #fff; font-weight: 700; }
+    html.tv .nav button.on:focus { -webkit-filter: none; filter: none; box-shadow: 0 0 0 .2vw #fff; }
+
+    /* ---------- iOS floating islands: three separate capsules (logo / nav / search) ---------- */
+    .topbar {
+      top: 10px;
+      top: calc(var(--safe-top, 0px) + 10px);
+      left: 0; right: 0;
+      height: 52px;
+      padding: 0 3%;
+      background: none !important;
+      box-shadow: none;
+      border-radius: 0;
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+      -webkit-transition: -webkit-transform .32s cubic-bezier(.2,.8,.2,1), opacity .3s;
+      transition: transform .32s cubic-bezier(.2,.8,.2,1), opacity .3s;
+    }
+    .topbar.hide { -webkit-transform: translateY(-140%); transform: translateY(-140%); opacity: 0; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { .topbar { -webkit-transition: none; transition: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *:before, *:after {
+        -webkit-transition-duration: .01ms !important; transition-duration: .01ms !important;
+        -webkit-animation-duration: .01ms !important; animation-duration: .01ms !important;
+      }
+    }
+    /* press feedback (opacity only — never shift layout or fight focus transforms) */
+    .nav button:active, .hfav:active, .sbtn:active, .chip:active, .rmng:active { opacity: .65; }
+    .topbar.solid { background: none !important; box-shadow: none; }
+    /* kill the legacy full-width gradient layers (three islands replace them) */
+    .topbar:before, .topbar:after, .tb-blur {
+      background: none !important;
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+      -webkit-mask-image: none !important; mask-image: none !important;
+      bottom: auto !important; height: 0 !important; opacity: 0 !important;
+    }
+    /* shared gradient-blur glass for the three islands (light & airy, not solid) */
+    .brand, .nav, .search {
+      background: linear-gradient(180deg, rgba(36,36,42,.68) 0%, rgba(14,14,18,.38) 100%) !important;
+      box-shadow: 0 8px 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.13);
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      -webkit-transition: background .25s; transition: background .25s;
+    }
+    .topbar.solid .brand, .topbar.solid .nav, .topbar.solid .search {
+      background: linear-gradient(180deg, rgba(26,26,30,.92) 0%, rgba(13,13,16,.84) 100%) !important;
+    }
+    /* 1) logo island — removed per design (2026-10-04); search takes the top-left slot */
+    .brand {
+      display: none !important;
+    }
+    /* 2) nav island */
+    .nav {
+      display: -webkit-box; display: -webkit-flex; display: flex;
+      -webkit-align-items: center; align-items: center;
+      padding: 4px; border-radius: 999px;
+    }
+    @media (min-width: 700px) {
+      /* nav module centered between logo and search */
+      .nav { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+    }
+    .nav button {
+      color: #cfcfd4; font-size: 14px; margin-right: 0; padding: 8px 15px;
+      border-radius: 999px; white-space: nowrap;
+      -webkit-transition: background .2s, color .2s, -webkit-transform .2s; transition: background .2s, color .2s, transform .2s;
+    }
+    .nav button.on { background: #fff; color: #141414; font-weight: 700; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+    html.tv .nav button.on { background: #fff; color: #141414; font-weight: 700; box-shadow: 0 2px 10px rgba(0,0,0,.35); -webkit-filter: none; filter: none; }
+    html.kbd .nav button:focus, html.tv .nav button:focus { background: rgba(255,255,255,.22); color: #fff; -webkit-transform: scale(1.06); transform: scale(1.06); box-shadow: none; }
+    html.kbd .nav button.on:focus, html.tv .nav button.on:focus {
+      background: #fff; color: #141414; -webkit-transform: none; transform: none;
+      box-shadow: 0 0 0 .22vw #E50914, 0 2px 10px rgba(0,0,0,.4); -webkit-filter: none; filter: none;
+    }
+    /* 3) search island — sits at the TOP LEFT (brand removed) */
+    .search {
+      position: relative;
+      height: 46px; width: 46px; margin-left: 0;
+      border-radius: 999px;
+      -webkit-box-flex: 0; -webkit-flex: 0 0 auto; flex: 0 0 auto;
+      -webkit-order: -1; order: -1;
+    }
+    .sbtn {
+      position: absolute; top: 4px; left: 4px; right: auto;
+      width: 38px; height: 38px; border-radius: 999px !important;
+      background: rgba(255,255,255,.14);
+      -webkit-transition: background .2s; transition: background .2s;
+    }
+    .sbtn svg { margin: 8px; }
+    @media (hover: hover) { .sbtn:hover { background: rgba(255,255,255,.24); } }
+    .sinput {
+      position: absolute; top: 4px; left: 46px; right: 4px; width: auto;
+      height: 38px; box-sizing: border-box;
+      padding: 0 12px;
+      border: 0; border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: #fff; font-size: 14px;
+      opacity: 0;
+      -webkit-transform: scaleX(.2); transform: scaleX(.2);
+      -webkit-transform-origin: left center; transform-origin: left center;
+      -webkit-transition: opacity .2s, -webkit-transform .25s; transition: opacity .2s, transform .25s;
+      pointer-events: none;
+      -webkit-appearance: none;
+    }
+    .search.open { width: 274px; }
+    .search.open .sinput { opacity: 1; -webkit-transform: none; transform: none; pointer-events: auto; }
+    .search.open .sbtn { left: 4px; right: auto; }
+    .sinput:focus { -webkit-box-shadow: 0 0 0 1px rgba(255,255,255,.7); box-shadow: 0 0 0 1px rgba(255,255,255,.7); background: rgba(255,255,255,.14); }
+    html.kbd .sbtn:focus, html.tv .sbtn:focus { background: rgba(255,255,255,.3); box-shadow: 0 0 0 2px #E50914; }
+    /* TV metrics */
+    html.tv .topbar { height: auto; top: 1.4vh; top: calc(var(--safe-top, 0px) + 1.4vh); padding: 0 4%; contain: layout paint; }
+    html.tv .brand { height: 5.4vh; padding: 0 1.8vw; font-size: 2.4vw; margin-right: 1vw; }
+    html.tv .nav { padding: .45vh .4vw; }
+    html.tv .nav button { font-size: 1.4vw; padding: .55vw 1.25vw; }
+    html.tv .search { width: 5.4vh; height: 5.4vh; }
+    html.tv .sbtn { top: .6vh; left: .6vh; width: 4.2vh; height: 4.2vh; }
+    html.tv .sbtn svg { width: 2.2vh; height: 2.2vh; margin: 1vh; }
+    html.tv .sinput { top: .6vh; left: 5.4vh; right: .6vh; height: 4.2vh; font-size: 1.35vw; padding: 0 1vw; }
+    html.tv .search.open { width: 24vw; }
+    @media (max-width: 899px) {
+      .topbar { padding: 0 2%; height: 48px; }
+      .brand { font-size: 25px; height: 42px; padding: 0 14px; margin-right: 6px; }
+      .nav { padding: 3px; }
+      .nav button { font-size: 14px; padding: 7px 11px; }
+      .search { width: 42px; height: 42px; }
+      .sbtn { top: 3px; left: 3px; width: 36px; height: 36px; }
+      .sbtn svg { margin: 7px; }
+      .sinput { top: 3px; left: 42px; right: 3px; height: 36px; font-size: 14px; }
+      .search.open { width: 190px; }
+    }
+    html.tv .htag { font-size: 1vw !important; padding: .3vw .9vw !important; background: rgba(255,255,255,.22) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    html.tv .dp-x { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(0,0,0,.55); }
+    html.tv .dp-rp, html.tv .dp-av { box-shadow: none; }
+    html.tv .btn { box-shadow: none; }
+    html.tv .poster, html.tv .card.skel .poster { -webkit-transform: none; transform: none; box-shadow: none !important; will-change: auto; }
+    html.tv .card:focus .poster { -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: none !important; }
+    html.tv .mini, html.tv .shadow { display: none !important; }
+    html.tv .glow { border-radius: 14px; box-shadow: inset 0 0 0 .22vw #fff; }
+    html.tv .row { content-visibility: auto; contain-intrinsic-size: 100vw 22vw; }
+    html.tv .row-scroll { scroll-behavior: auto; contain: layout paint; padding: 1.5vw 0 1vw 5%; }
+    html.tv .card.skel .poster { -webkit-animation: none; animation: none; }
+    /* 10-foot layout: 5% overscan margins, first row fully above the fold at 1920x1080 and 960x540 */
+    html.tv .hero, html.tv .hero.land { height: 66vh; min-height: 0; max-height: none; }
+    html.tv .hero.land .hero-bg { top: 10%; height: 80%; max-width: 60%; }
+    html.tv .rows { margin-top: -8vh; }
+    html.tv .hero .hero-body { left: 5%; bottom: 14vh; width: 38%; }
+    html.tv .hero-credits { right: 5%; bottom: 14vh; width: 26%; font-size: 1.05vw; color: rgba(255,255,255,.68); }
+    html.tv .hero-title { font-size: 4.4vw; margin-bottom: 3.6vh; letter-spacing: .04em; }
+    html.tv .hero-gen { font-size: 1.6vw; font-weight: 800; letter-spacing: .1em; margin-bottom: 1.6vh; }
+    html.tv .hero .hero-desc { font-size: 1.4vw; line-height: 1.7; margin-bottom: 3vh; color: rgba(255,255,255,.9); }
+    html.tv .hero-tag { margin-bottom: 1vh; }
+    html.tv .hero-tag .nlogo { font-size: 2vw; margin-right: 1vw; }
+    html.tv .hero-tag .cat { font-size: 1.4vw; }
+    html.tv .hero-btns .btn { height: 4.2vw; line-height: 4.2vw; font-size: 1.55vw; padding: 0 2.1vw 0 1.8vw; margin-right: 1.2vw; }
+    html.tv .hero-btns .btn.hround { width: 4.2vw; font-size: 1.5vw; }
+    html.tv .row-title { margin: 0 5% .4vw; font-size: 1.8vw; }
+    html.tv .card { width: 10.5vw; margin-right: 1vw; }
+    html.tv .card-top { width: 17vw; }
+    html.tv .card-top .poster-box { width: 10.5vw; }
+    html.tv .card-top .rank { width: 6.5vw; font-size: 12vw; letter-spacing: -1vw; margin-right: -.8vw; -webkit-text-stroke: 2px #5c5c5c; }
+    html.tv .card-top.r10 { width: 20vw; }
+    html.tv .card-top.r10 .rank { width: 9.5vw; letter-spacing: -1.6vw; }
+    html.tv .card .cap { display: block; margin-top: .55vw; font-size: 1.05vw; line-height: 1.4; color: #bdbdbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    html.tv .card-top .cap { display: none; }
+    html.tv .card:focus .cap { color: #fff; }
+    html.tv .grid .card { width: 11.3%; margin: 0 1.4% 2vw 0; }
+    html.tv .results { padding-left: 5%; padding-right: 5%; padding-top: 11vh; }
+    html.tv #histGrid .cap { font-size: 1.1vw; }
+    html.tv #histGrid .cap2 { font-size: .95vw; }
+    html.tv .foot { margin-left: 5%; margin-right: 5%; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar" id="topbar">
+      <div class="tb-blur" aria-hidden="true"></div>
+      <button type="button" class="brand" id="brand" data-go="hero" aria-label="WEX · 返回首页">WEX</button>
+      <nav class="nav" id="nav">
+        <button type="button" data-go="hero" id="navHome" class="on">首页</button>
+        <button type="button" data-go="movie">电影</button>
+        <button type="button" data-go="tv">剧集</button>
+        <button type="button" data-go="show">综艺</button>
+        <button type="button" data-go="anime">动漫</button>
+        <button type="button" data-go="fav" id="navFav">收藏与历史</button>
+      </nav>
+      <div class="spacer"></div>
+      <div class="search" id="search">
+        <input class="sinput" id="sinput" type="search" placeholder="片名、演员" autocomplete="off" enterkeyhint="search" tabindex="-1">
+        <button type="button" class="sbtn" id="sbtn" aria-label="搜索">
+          <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5l5.5 5.5"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="main" id="main">
+      <section class="hero" id="hero">
+        <div class="hero-art"><img class="hero-bg" id="heroBg" alt="" decoding="async"><img class="hero-bg" id="heroBg2" alt="" decoding="async"></div>
+        <div class="hero-vig"></div>
+        <div class="hero-body">
+          <div class="hero-tag"><span class="nlogo" aria-hidden="true">WEX</span><span class="cat" id="heroCat"></span><span class="htag" id="heroTag"></span></div>
+          <h1 class="hero-title" id="heroTitle">&nbsp;</h1>
+          <div class="hero-gen" id="heroGen"></div>
+          <p class="hero-desc" id="heroDesc"></p>
+          <div class="hero-meta" id="heroMeta"></div>
+          <div class="hero-btns">
+            <button type="button" class="btn btn-play" id="heroPlay"><i>&#9654;</i>搜索播放</button>
+            <button type="button" class="btn hround" id="heroInfo" aria-label="更多资讯"><b>i</b></button>
+          </div>
+        </div>
+        <div class="hero-credits" id="heroCredits"></div>
+      </section>
+      <div class="rows" id="rows"></div>
+      <div class="hint" id="hint" hidden></div>
+      <div class="foot">WEX · 片单与评分来自豆瓣 · 点「搜索播放」由 App 内全部线路搜索播放</div>
+    </div>
+
+    <section class="results" id="results" hidden>
+      <h2 id="resTitle">搜索</h2>
+      <div><button type="button" class="appsearch" id="resApp">在 App 中搜索</button></div>
+      <div class="note" id="resNote"></div>
+      <div class="grid" id="resGrid"></div>
+    </section>
+
+    <section class="results" id="catPage" hidden>
+      <h2 id="catTitle">电影</h2>
+      <div id="catChips"></div>
+      <div class="note" id="catNote"></div>
+      <div class="grid" id="catGrid"></div>
+    </section>
+
+    <button type="button" class="hfav" id="homeFav" data-go="fav" aria-label="收藏" title="收藏" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3l-1.3-1.2C5.9 14.8 3 12.2 3 8.9 3 6.3 5 4.3 7.6 4.3c1.6 0 3.2.8 4.4 2 1.2-1.2 2.8-2 4.4-2 2.6 0 4.6 2 4.6 4.6 0 3.3-2.9 5.9-7.7 10.2L12 20.3z"></path></svg></button>
+    <button type="button" class="hfav" id="homeHist" data-go="hist" aria-label="最近看过" title="最近看过" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5.2l3.4 2" fill="none"></path></svg></button>
+
+    <section class="results" id="mgPage" hidden>
+      <h2 id="mgTitle">管理</h2>
+      <div class="chips" id="mgTools"><button type="button" class="chip" id="mgAll">全选</button><button type="button" class="chip" id="mgDel">删除所选</button><button type="button" class="chip on" id="mgDone">完成</button></div>
+      <div class="note" id="mgNote"></div>
+      <div class="grid" id="mgGrid"></div>
+    </section>
+
+    <section class="results" id="favPage" hidden>
+      <h2 id="favH2">我的收藏</h2>
+      <div class="chips" id="favTabs">
+        <button type="button" class="chip on" data-ft="fav">收藏</button>
+        <button type="button" class="chip" data-ft="hist">最近看过</button>
+      </div>
+      <div class="chips" id="favTools">
+        <button type="button" class="chip" id="favManage">管理</button>
+        <button type="button" class="chip" id="favKeepBtn" hidden>打开 App 收藏</button>
+        <button type="button" class="chip" id="histManage" hidden>管理</button>
+      </div>
+      <div class="note" id="favNote"></div>
+      <div class="grid" id="favGrid"></div>
+      <div class="note" id="histNote" hidden></div>
+      <div class="grid" id="histGrid" hidden></div>
+    </section>
+  </div>
+
+  <div class="dp" id="modal" aria-hidden="true" role="dialog" aria-label="影片详情">
+    <div class="dp-bg"><canvas id="dpBgC" width="2" height="2"></canvas><div class="dp-shade"></div></div>
+    <button type="button" class="dp-x" id="sheetX" aria-label="返回"><b>&#8249;</b></button>
+    <div class="dp-in" id="dpIn">
+      <div class="dp-head">
+        <div class="dp-poster"><span class="ph" id="dpPh"></span><img id="sheetPoster" alt="" decoding="async"></div>
+        <div class="dp-info">
+          <h1 id="sheetTitle"></h1>
+          <div class="dp-orig" id="dpOrig"></div>
+          <div class="dp-meta" id="sheetMeta"></div>
+          <div class="dp-rate" id="dpRate"></div>
+          <div class="dp-btns" id="sheetBtns">
+            <button type="button" class="btn" id="sheetResume" hidden></button>
+            <button type="button" class="btn" id="sheetPlay"><i>&#9654;</i>搜索播放</button>
+            <button type="button" class="btn" id="sheetAlt" hidden></button>
+            <button type="button" class="btn dp-round" id="sheetFav" data-l="收藏" aria-label="收藏">&#9825;</button>
+            <button type="button" class="btn dp-round" id="sheetDone" data-l="已看完" aria-label="标记已看完">&#10003;</button>
+          </div>
+          <div class="dp-syn"><p id="sheetDesc" class="clamp"></p><button type="button" class="dp-more" id="dpMore" hidden>更多</button></div>
+        </div>
+      </div>
+      <section class="dp-sec" id="dpCastSec" hidden><h3>演职人员</h3><div class="dp-scroll" id="dpCast"></div></section>
+      <section class="dp-sec" id="dpRecSec" hidden><h3>相关推荐</h3><div class="dp-scroll" id="dpRecs"></div></section>
+      <section class="dp-sec" id="dpInfoSec" tabindex="-1"><h3>详细信息</h3><dl class="dp-grid" id="sheetKv"></dl></section>
+      <div class="dp-note">资料与评分来自豆瓣 · 「搜索播放」由 App 在本配置的全部线路中搜索</div>
+    </div>
+  </div>
+  <div class="qa" id="qa" hidden><div class="qa-box" role="dialog"><h4 id="qaTitle"></h4><div id="qaBtns"></div></div></div>
+  <div class="cfm" id="cfm" hidden><div class="cfm-box"><p id="cfmText"></p><div class="cfm-btns"><button type="button" class="btn" id="cfmNo">取消</button><button type="button" class="btn btn-play" id="cfmYes">删除</button></div></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function () {
+    "use strict";
+    /* WEX WebHome: Douban public lists (fetched in-app via fm.req, Referer set natively) + the app's own search.
+       Nothing here is played or proxied by our server: 搜索播放 hands the title to fm.search (native search across all
+       sites in the config), 继续观看 reopens the native source via fm.vod. Plain browsers fall back to ../db and ../img
+       (small cached nginx relays) only so the page can be previewed. All paths are relative, no host is hard-coded. */
+    var DB = "https://m.douban.com/rexxar/api/v2/";
+    var REF = "https://movie.douban.com/";
+    var UA = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36";
+    var root = document.documentElement;
+    var $ = function (id) { return document.getElementById(id); };
+    var state = { chromeMode: "", systemBarsHidden: false };
+    var ITEMS = [], ROWS = {}, ROW_ORDER = [];
+    var HIST = {}, HIST_N = {};   // history key -> entry; normalised name -> entry (watch badges)
+    var featured = null, searchMode = false, modalItem = null, lastFocus = null, lastFocusMemo = null, lastKw = "";
+    /* TV / 10-foot mode: leanback client, TV user agent, ?tv=1, or a wide screen with neither touch nor a mouse */
+    function detectTV() {
+      var q = location.search || "", ua = navigator.userAgent || "";
+      if (/[?&]tv=0(&|$)/.test(q)) return false;
+      if (/[?&]tv=1(&|$)/.test(q)) return true;
+      try { if (window.fongmiClient && window.fongmiClient.isLeanback) return true; } catch (e) {}
+      if (/Android ?TV|Google ?TV|BRAVIA|\bAFT[A-Z]|MiTV|MIBOX|HiTV|SmartTV|SMART-TV|Tizen|Web0S|WebOS|NetCast|HbbTV|Leanback|CrKey/i.test(ua)) return true;
+      var mm = function (x) { try { return !!(window.matchMedia && window.matchMedia(x).matches); } catch (e) { return false; } };
+      var touch = ("ontouchstart" in window) || (navigator.maxTouchPoints || 0) > 0;
+      var mouse = mm("(any-pointer: fine)") || mm("(pointer: fine)") || mm("(any-hover: hover)");
+      var w = window.innerWidth || 0, h = window.innerHeight || 0;
+      return w >= 900 && w > h && !touch && !mouse;
+    }
+    if (detectTV() && !/(^|\s)tv(\s|$)/.test(root.className)) root.className += " tv";
+    var loadQueue = [], loading = 0, MAXLOAD = /(^|\s)tv(\s|$)/.test(root.className) ? 4 : 6;
+
+    function isTV() { return /(^|\s)tv(\s|$)/.test(root.className); }
+    function hasFm() { return !!(window.fm && typeof window.fm.req === "function"); }
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+    function clean(s) { return String(s == null ? "" : s).replace(/[\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, "").replace(/\s+/g, " ").trim(); }
+    function normName(s) { return clean(s).toLowerCase().replace(/[\s·・:：,，.。!！?？'"“”‘’()（）\[\]【】《》<>\-—_~～]/g, ""); }
+    function baseTitle(s) {   // 花儿与少年 第八季 -> 花儿与少年 ; 阿凡达：水之道 -> 阿凡达 (offered as a second search)
+      var t = clean(s).replace(/\s*(第[一二三四五六七八九十百零\d]+[季部]|season\s*\d+|S\d+)\s*$/i, "");
+      if (t === clean(s)) t = t.replace(/\s*[：:].*$/, "");
+      return t.length >= 2 && t !== clean(s) ? t : "";
+    }
+    function toast(msg, ms) {
+      var t = $("toast");
+      t.textContent = msg;
+      t.className = "toast show";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { t.className = "toast"; }, ms || 2600);
+    }
+    function fmtTime(ms) {
+      var s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60), h = Math.floor(m / 60);
+      s = s % 60;
+      if (h) { m = m % 60; return h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s; }
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    /* ---------- SDK readiness: the bridge is injected at onPageFinished, so wait briefly for it ---------- */
+    var READY = false, readyCbs = [];
+    function whenReady(cb) { if (READY) cb(); else readyCbs.push(cb); }
+    function readyP() { return new Promise(function (r) { whenReady(r); }); }
+    function setReady() {
+      if (READY) return;
+      READY = true;
+      var c = readyCbs; readyCbs = [];
+      for (var i = 0; i < c.length; i += 1) { try { c[i](); } catch (e) {} }
+      schedulePump();
+    }
+    function inApp() { return !!(window.fm || window.fongmiBridge || window.fongmiClient); }
+
+    /* ---------- safe area / chrome (from devkit basic-homepage) ---------- */
+    function readRootPixel(name) {
+      var v = parseFloat(getComputedStyle(root).getPropertyValue(name) || "0");
+      return isNaN(v) ? 0 : v;
+    }
+    function shouldUseTopSafeArea(d) {
+      d = d || {};
+      var mode = String(d.chromeMode || state.chromeMode || "").toLowerCase();
+      var hidden = typeof d.systemBarsHidden === "undefined" ? state.systemBarsHidden : !!d.systemBarsHidden;
+      var safeTop = Number(d.safeTop), sb = Number(d.statusBarHeight);
+      if (isNaN(safeTop)) safeTop = readRootPixel("--fm-safe-top");
+      if (isNaN(sb)) sb = readRootPixel("--fm-status-bar-height");
+      if (hidden && safeTop <= 0 && sb <= 0) return false;
+      return mode === "edge" || mode === "immersive" || mode === "fullscreen" || mode.indexOf("tv-") === 0 || hidden;
+    }
+    function updateSafeAreaMode(d) {
+      d = d || {};
+      if (d.chromeMode) state.chromeMode = String(d.chromeMode).toLowerCase();
+      if (typeof d.systemBarsHidden !== "undefined") state.systemBarsHidden = !!d.systemBarsHidden;
+      root.classList.toggle("safe-top-active", shouldUseTopSafeArea(d));
+    }
+    function refreshSafeAreaMode() {
+      if (!window.fm || !fm.ui || !fm.ui.getViewport) { updateSafeAreaMode({}); return; }
+      Promise.resolve(fm.ui.getViewport()).then(updateSafeAreaMode).catch(function () { updateSafeAreaMode({}); });
+    }
+
+    /* ---------- network ---------- */
+    function getJSON(url, tries) {
+      tries = tries == null ? 1 : tries;
+      var p = new Promise(function (resolve, reject) {
+        var x = new XMLHttpRequest();
+        x.open("GET", url, true);
+        x.timeout = 20000;
+        x.onload = function () {
+          if (x.status >= 200 && x.status < 300) {
+            try { resolve(JSON.parse(x.responseText)); } catch (e) { reject(e); }
+          } else { reject(new Error("HTTP " + x.status)); }
+        };
+        x.onerror = function () { reject(new Error("network")); };
+        x.ontimeout = function () { reject(new Error("timeout")); };
+        x.send();
+      });
+      return p.catch(function (e) {
+        if (tries > 0) return new Promise(function (r) { setTimeout(r, 700); }).then(function () { return getJSON(url, tries - 1); });
+        throw e;
+      });
+    }
+    /* Douban JSON: in the app via fm.req (native OkHttp, Referer header, no CORS); plain browsers via ../db (cached relay) */
+    function dbFetch(path) {
+      return readyP().then(function () { return dbFetchNow(path); });
+    }
+    function dbFetchNow(path) {
+      if (!hasFm()) return getJSON("../db/" + path, 1);
+      return Promise.resolve().then(function () {
+        return fm.req(DB + path, { method: "GET", headers: { "Referer": REF, "User-Agent": UA, "Accept": "application/json" }, responseType: "text", timeout: 15 });
+      }).then(function (r) {
+        if (!r || !r.ok) throw new Error((r && (r.error || r.status)) || "fm.req");
+        var b = r.body;
+        return typeof b === "string" ? JSON.parse(b) : b;
+      }).catch(function () { return getJSON("../db/" + path, 0); });
+    }
+    /* small client cache (localStorage, 30 min fresh, stale copy used when the network fails) */
+    var MEMC = {};
+    function lcGet(k) { if (MEMC[k]) return MEMC[k]; try { var s = localStorage.getItem("wexc:" + k); if (s) { MEMC[k] = JSON.parse(s); return MEMC[k]; } } catch (e) {} return null; }
+    function lcSet(k, d, t) {
+      var o = { t: t || Date.now(), d: d };
+      MEMC[k] = o;
+      try { localStorage.setItem("wexc:" + k, JSON.stringify(o)); } catch (e) { lcTrim(); }
+    }
+    function lcTrim() {
+      try {
+        var ks = [];
+        for (var i = 0; i < localStorage.length; i += 1) { var k = localStorage.key(i); if (k && k.indexOf("wexc:") === 0) ks.push(k); }
+        for (var j = 0; j < ks.length; j += 1) localStorage.removeItem(ks[j]);
+      } catch (e) {}
+    }
+    /* stale-while-revalidate: a fresh entry resolves at once; a stale entry also resolves at once and is refreshed
+       in the background (onFresh gets the new data); only a missing entry waits for the network */
+    var INFLIGHT = {};
+    function cached(key, ttl, fetcher, onFresh) {
+      var c = lcGet(key);
+      if (c && Date.now() - c.t < ttl) return Promise.resolve(c.d);
+      if (c) {
+        if (!INFLIGHT[key]) {
+          INFLIGHT[key] = 1;
+          fetcher().then(function (d) { delete INFLIGHT[key]; lcSet(key, d); persistNote(key, c.t); if (onFresh) onFresh(d); }, function () { delete INFLIGHT[key]; });
+        }
+        return Promise.resolve(c.d);
+      }
+      return fetcher().then(function (d) { lcSet(key, d); persistNote(key, 0); return d; });
+    }
+    /* durable copies in fm.cache (SharedPreferences): one home snapshot + a small detail LRU (few, small values) */
+    var SNAP_KEY = "wexSnap", DET_KEY = "wexDet", persistT = 0, detDirty = false, snapDirty = false;
+    function persistNote(key, oldT) {
+      if (/^(d2|c|r):/.test(key)) detDirty = true; else if (/^l2?:/.test(key)) snapDirty = true;
+      clearTimeout(persistT); persistT = setTimeout(persistFlush, 4000);
+    }
+    function persistFlush() {
+      if (!hasCache()) return;
+      try {
+        if (snapDirty) {
+          snapDirty = false;
+          var snap = {}, n = 0;
+          for (var i = 0; i < ROW_ORDER.length; i += 1) {
+            var r = ROWS[ROW_ORDER[i]];
+            if (!r.def || !r.def.spec) continue;
+            var k = "l2:" + specPath(r.def.spec, 0, r.def.cnt), c = lcGet(k);
+            if (c) { snap[k] = c; n += 1; }
+          }
+          for (var hi = 0; hi < HERO_SPECS.length; hi += 1) {   // hero catalog too
+            var hk = "l2:" + specPath(HERO_SPECS[hi], 0, 50), hc = lcGet(hk);
+            if (hc && !snap[hk]) { snap[hk] = hc; n += 1; }
+          }
+          if (n) Promise.resolve(fm.cache.set(SNAP_KEY, JSON.stringify(snap))).catch(function () {});
+        }
+        if (detDirty) {
+          detDirty = false;
+          var ks = [];
+          for (var mk in MEMC) if (/^(d2|c|r):/.test(mk)) ks.push(mk);
+          ks.sort(function (a, b) { return MEMC[b].t - MEMC[a].t; });
+          var det = {};
+          for (var j = 0; j < ks.length && j < 60; j += 1) det[ks[j]] = MEMC[ks[j]];
+          Promise.resolve(fm.cache.set(DET_KEY, JSON.stringify(det))).catch(function () {});
+        }
+      } catch (e) {}
+    }
+    function hydrateFromFm() {   // after SDK ready: fill missing local entries from fm.cache (e.g. WebView storage was cleared)
+      if (!hasCache()) return Promise.resolve();
+      var put = function (s) {
+        var o = jparse(s, null);
+        if (!o || typeof o !== "object") return;
+        for (var k in o) { var c = lcGet(k); if (o[k] && o[k].t && (!c || c.t < o[k].t)) lcSet(k, o[k].d, o[k].t); }
+      };
+      var t = new Promise(function (r) { setTimeout(r, 900); });
+      return Promise.race([t, Promise.all([
+        Promise.resolve(fm.cache.get(SNAP_KEY)).then(put, function () {}),
+        Promise.resolve(fm.cache.get(DET_KEY)).then(put, function () {})
+      ])]);
+    }
+    function enc(s) { return encodeURIComponent(s); }
+    function specPath(s, start, count) {
+      if (s.k === "hot") return "subject/recent_hot/" + s.mt + "?start=" + start + "&limit=" + count + "&category=" + enc(s.cat) + "&type=" + enc(s.type);
+      if (s.k === "col") return "subject_collection/" + s.id + "/items?start=" + start + "&count=" + count;
+      if (s.k === "rec") return s.mt + "/recommend?refresh=0&start=" + start + "&count=" + count + "&selected_categories=" + enc(JSON.stringify(s.sel || {})) + "&uncollect=false&tags=" + enc(s.tags || "");
+      if (s.k === "search") return "search/movie?q=" + enc(s.q) + "&start=" + start + "&count=" + count;
+      return "";
+    }
+    function picOf(x) {
+      var p = x.pic || x.cover || null;
+      if (p && typeof p === "object") return p.normal || p.large || p.url || "";
+      return x.cover_url || (typeof p === "string" ? p : "") || "";
+    }
+    function mapItem(x) {
+      if (!x) return null;
+      var t = x.target && typeof x.target === "object" ? x.target : x;
+      var mt = String(x.target_type || t.type || "");
+      if (mt !== "movie" && mt !== "tv") return null;
+      var r = t.rating && typeof t.rating === "object" ? Number(t.rating.value) || 0 : 0;
+      var sub = clean(t.card_subtitle || "");
+      var y = String(t.year || "") || ((/^(\d{4})/.exec(sub) || [])[1] || "");
+      return { id: String(t.id), mt: mt, name: clean(t.title), pic: picOf(t), rate: r, sub: sub, year: y, eps: clean(t.episodes_info || ""), rank: Number(x.rank_value) || 0 };
+    }
+    function mapList(d) {
+      var raw = d.items || d.subject_collection_items || (d.subjects && d.subjects.items) || [], out = [];
+      for (var i = 0; i < raw.length; i += 1) { var v = mapItem(raw[i]); if (v && v.id && v.name) out.push(v); }
+      return { items: out, total: Number(d.total) || 0, n: raw.length };
+    }
+    function dbList(s, start, count, onFresh) {
+      var path = specPath(s, start, count);
+      return cached("l2:" + path, 45 * 60000, function () {
+        return dbFetch(path).then(function (d) {
+          var raw = d.items || d.subject_collection_items || (d.subjects && d.subjects.items) || [], out = [];
+          for (var i = 0; i < raw.length; i += 1) { var v = mapItem(raw[i]); if (v && v.id && v.name) out.push(v); }
+          return { items: out, total: Number(d.total) || 0, n: raw.length };
+        });
+      }, onFresh);
+    }
+    function names(a, n) { var o = []; a = a || []; for (var i = 0; i < a.length && o.length < (n || 5); i += 1) { var x = a[i]; if (x && (x.name || typeof x === "string")) o.push(clean(x.name || x)); } return o.join(" / "); }
+    function dbDetail(v) {
+      return cached("d2:" + v.mt + v.id, 24 * 3600000, function () {
+        return dbFetch(v.mt + "/" + v.id).then(function (d) {
+          var rt = d.rating && typeof d.rating === "object" ? d.rating : {};
+          return {
+            intro: clean(d.intro || ""), genres: (d.genres || []).join(" "), countries: (d.countries || []).join(" "),
+            durations: (d.durations || []).join(" "), eps: Number(d.episodes_count) || 0, pubdate: (d.pubdate || []).join(" "),
+            directors: names(d.directors, 3), actors: names(d.actors, 6), rate: Number(rt.value) || 0, rcount: Number(rt.count) || 0,
+            year: String(d.year || ""), pic: picOf(d), epinfo: clean(d.episodes_info || ""),
+            langs: (d.languages || []).join(" / "), aka: (d.aka || []).slice(0, 4).join(" / "), orig: clean(d.original_title || "")
+          };
+        });
+      });
+    }
+    function avatarOf(x) {   // Douban celebrity avatar -> small webp (~6-10 KB)
+      var a = x && x.avatar, u = a && typeof a === "object" ? a.normal || a.large || "" : String(a || "");
+      var m = /^https?:\/\/(img\d)\.doubanio\.com\/view\/(personage|celebrity)\/[a-z]+\/public\/([A-Za-z0-9.]+?)\.(?:jpg|jpeg|webp)$/.exec(u);
+      return m ? "https://" + m[1] + ".doubanio.com/view/" + m[2] + "/s/public/" + m[3] + ".webp" : "";
+    }
+    function dbCast(v) {   // celebrities (directors + actors with avatars) + credits (for 编剧)
+      return cached("c:" + v.mt + v.id, 7 * 24 * 3600000, function () {
+        var base = v.mt + "/" + v.id + "/";
+        return Promise.all([dbFetch(base + "celebrities"), dbFetch(base + "credits").catch(function () { return {}; })]).then(function (r) {
+          var c = r[0] || {}, out = [], wr = [], seen = {};
+          var add = function (x, role) { var n = clean(x && x.name); if (!n || seen[n]) return; seen[n] = 1; out.push({ n: n, r: role, a: avatarOf(x) }); };
+          var ds = c.directors || [], as = c.actors || [], i;
+          for (i = 0; i < ds.length && i < 4; i += 1) add(ds[i], "导演");
+          for (i = 0; i < as.length && out.length < 22; i += 1) add(as[i], clean(as[i].character || "").replace(/^饰\s*/, "饰 ") || "演员");
+          var cr = (r[1] && r[1].items) || [];
+          for (i = 0; i < cr.length; i += 1) if (cr[i] && cr[i].category === "编剧" && cr[i].name) wr.push(clean(cr[i].name));
+          return { cast: out, writers: wr.join(" / ") };
+        });
+      });
+    }
+    function dbRecs(v) {
+      return cached("r:" + v.mt + v.id, 24 * 3600000, function () {
+        return dbFetch(v.mt + "/" + v.id + "/recommendations").then(function (d) {
+          var a = d instanceof Array ? d : (d && (d.items || d.subjects)) || [], out = [];
+          for (var i = 0; i < a.length && out.length < 20; i += 1) {
+            var x = a[i];
+            if (!x) continue;
+            if (!x.type && !x.target_type) x.type = v.mt;
+            var m = mapItem(x);
+            if (m && m.id && m.name && m.id !== v.id) out.push(m);
+          }
+          return out;
+        });
+      });
+    }
+
+    /* ---------- images: Douban needs a douban Referer -> fm.res (native, on the device); browser -> ../img relay ---------- */
+    function dPoster(u, size) {
+      var m = /\/(p\d+)\.(?:jpg|jpeg|webp|png)/i.exec(u || ""), h = /\b(img\d)\.doubanio\.com/.exec(u || "");
+      if (!m) return u || "";
+      return "https://" + (h ? h[1] : "img2") + ".doubanio.com/view/photo/" + (size === "m" ? "m_ratio_poster" : "s_ratio_poster") + "/public/" + m[1] + ".webp";
+    }
+    function imgSrc(u) {
+      u = String(u || "");
+      if (!u) return "";
+      if (/^https?:\/\/127\.0\.0\.1[:/]/.test(u)) return u;
+      var isDb = /^https?:\/\/img\d\.doubanio\.com\//.test(u);
+      if (hasFm() && typeof fm.res === "function") {
+        try { return isDb ? fm.res(u, { headers: { "Referer": REF } }) : fm.res(u); } catch (e) {}
+      }
+      if (isDb) {
+        var m = /^https?:\/\/(img\d\.doubanio\.com)\/(view\/photo\/(?:s_ratio_poster|m_ratio_poster|l|m)\/public\/p\d+\.(?:jpg|webp)|view\/(?:personage|celebrity)\/(?:s|m)\/public\/[A-Za-z0-9.]+\.(?:jpg|webp))$/.exec(u);
+        return m ? "../img/" + m[1] + "/" + m[2] : "";
+      }
+      if (/doubanio\.com/.test(u)) return "";   // other douban hosts/paths need a Referer we cannot send from a browser
+      return u;
+    }
+    function pumpImages() {
+      if (!READY) return;
+      var vh = window.innerHeight || 800, vw = window.innerWidth || 1280;
+      var imgs = document.querySelectorAll("img[data-src]");
+      for (var i = 0; i < imgs.length; i += 1) {
+        var img = imgs[i];
+        if (img._q) continue;
+        var r = img.getBoundingClientRect();
+        if (r.bottom < -300 || r.top > vh + 500 || r.right < -200 || r.left > vw + vw * 0.6) continue;
+        if (r.width === 0 && r.height === 0) continue;
+        img._q = 1;
+        loadQueue.push(img);
+      }
+      drain();
+    }
+    function drain() {
+      while (loading < MAXLOAD && loadQueue.length) {
+        (function (img) {
+          loading += 1;
+          var src = imgSrc(img.getAttribute("data-src"));
+          img.removeAttribute("data-src");
+          var done = function (ok) {
+            loading -= 1;
+            img.onload = img.onerror = null;
+            if (ok) img.className = "ok"; else img.style.visibility = "hidden";
+            drain();
+          };
+          if (!src) { loading -= 1; img.style.visibility = "hidden"; return; }
+          img.onload = function () { done(true); };
+          img.onerror = function () { done(false); };
+          img.src = src;
+        })(loadQueue.shift());
+      }
+    }
+    var pumpScheduled = false;
+    function schedulePump() {
+      if (pumpScheduled) return;
+      pumpScheduled = true;
+      (window.requestAnimationFrame || setTimeout)(function () { pumpScheduled = false; pumpImages(); }, 16);
+    }
+    function setImg(el, u, cls) {   // one-off images (hero, sheet)
+      whenReady(function () {
+        var s = imgSrc(u);
+        el.onload = function () { if (cls) el.className = cls + " ok"; else el.className = "ok"; };
+        el.onerror = function () { el.removeAttribute("src"); };
+        if (s) el.src = s; else el.removeAttribute("src");
+      });
+    }
+
+    /* ---------- client storage: fm.cache in the app (persistent), localStorage in a plain browser ---------- */
+    function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function hasCache() { return !!(window.fm && fm.cache && typeof fm.cache.get === "function"); }
+    function kvGet(k) {
+      if (!hasCache()) return Promise.resolve(lsGet(k));
+      return Promise.resolve().then(function () { return fm.cache.get(k); }).then(function (v) {
+        if (!v && lsGet(k)) { kvSet(k, lsGet(k)); return lsGet(k); }
+        return v || "";
+      }, function () { return lsGet(k); });
+    }
+    function kvSet(k, v) {
+      lsSet(k, v);
+      if (hasCache()) { try { Promise.resolve(fm.cache.set(k, v)).catch(function () {}); } catch (e) {} }
+    }
+    function jparse(s, def) { try { var o = typeof s === "string" ? JSON.parse(s || "null") : s; return o == null ? def : o; } catch (e) { return def; } }
+
+    /* poster cache: native fm.history() entries often have an empty vodPic; remember covers
+       when we still know them (hero / detail / play / search) and restore them by title. */
+    var PIC_KEY = "wexPics", PIC = {}, picT = 0, picP = null;
+    function picGet(name) { var x = PIC[normName(name || "")]; return x && x.p ? x.p : ""; }
+    function picWall(name) { var x = PIC[normName(name || "")]; return x && x.w ? x.w : ""; }
+    function picSaveSoon() { clearTimeout(picT); picT = setTimeout(function () { kvSet(PIC_KEY, JSON.stringify(PIC)); }, 2500); }
+    function picRemember(v) {
+      if (!v || v.hk || !v.name || !v.pic) return;
+      var k = normName(v.name); if (!k) return;
+      PIC[k] = { p: v.pic, w: v.still || PIC[k] && PIC[k].w || "", t: Date.now() };
+      var n = 0, q;
+      for (q in PIC) n += 1;
+      if (n > 200) {
+        var ks = [];
+        for (q in PIC) ks.push([PIC[q].t || 0, q]);
+        ks.sort(function (a, b) { return a[0] - b[0]; });
+        for (var i = 0; i < (ks.length >> 1); i += 1) delete PIC[ks[i][1]];
+      }
+      picSaveSoon();
+    }
+    function picLoad() {   // one shared in-flight load so refreshHistory always waits for the cache
+      if (!picP) {
+        picP = kvGet(PIC_KEY).then(function (s) {
+          var o = jparse(s, {}), k;
+          if (o && typeof o === "object") for (k in o) if (!PIC[k]) PIC[k] = o[k];
+        }, function () {});
+      }
+      return picP;
+    }
+
+    /* ---------- 收藏 (WebHome-side list; the app's own 收藏 opens via fm.openKeep) ---------- */
+    var FAV_KEY = "wexFav", FAV = [];
+    function favHas(id) { for (var i = 0; i < FAV.length; i += 1) if (String(FAV[i].id) === String(id)) return true; return false; }
+    var FAVDEL = {};   // id -> deletion time (tombstones keep a removed item from coming back from the other store)
+    function favSave() { kvSet(FAV_KEY, JSON.stringify({ v: 2, items: FAV.slice(0, 500), del: FAVDEL })); }
+    function favBtn() { var b = $("sheetFav"); if (!b || !modalItem) return; var on = favHas(modalItem.id); b.innerHTML = on ? "&#9829;" : "&#9825;"; b.className = on ? "btn dp-round on" : "btn dp-round"; b.setAttribute("data-l", on ? "已收藏" : "收藏"); b.setAttribute("aria-label", on ? "取消收藏" : "收藏"); }
+    function favRefresh() { favBtn(); favUI(); if (favRow) fillRow(favRow, FAV.slice(0, 30), null, false); var hb = $("homeFav"); if (hb) { if (FAV.length) hb.classList.add("has"); else hb.classList.remove("has"); } }
+    function favParse(s) {
+      var o = jparse(s, null);
+      if (o instanceof Array) return { items: o, del: {} };
+      if (o && o.items instanceof Array) return { items: o.items, del: o.del && typeof o.del === "object" ? o.del : {} };
+      return { items: [], del: {} };
+    }
+    function favMerge(a, b) {
+      var del = {}, map = {}, out = [], k, now = Date.now();
+      [a.del, b.del].forEach(function (d) { for (var q in d) if (!del[q] || del[q] < d[q]) del[q] = d[q]; });
+      a.items.concat(b.items).forEach(function (x) {
+        if (!x || !x.id || !x.name) return;
+        var id = String(x.id), t = Number(x.ts) || 0;
+        if (del[id] && del[id] >= t) return;
+        if (!map[id] || (Number(map[id].ts) || 0) < t) map[id] = x;
+      });
+      for (k in map) out.push(map[k]);
+      out.sort(function (x, y) { return (Number(y.ts) || 0) - (Number(x.ts) || 0); });
+      for (k in del) if (now - del[k] > 90 * 864e5) delete del[k];
+      return { items: out.slice(0, 500), del: del };
+    }
+    function favLoad() {   // merge both stores (and the in-memory list) instead of letting one overwrite the other
+      var ls = favParse(lsGet(FAV_KEY));
+      var p = hasCache() ? Promise.resolve().then(function () { return fm.cache.get(FAV_KEY); }).then(favParse, function () { return { items: [], del: {} }; }) : Promise.resolve({ items: [], del: {} });
+      return p.then(function (fc) {
+        var m = favMerge(favMerge(ls, fc), { items: FAV, del: FAVDEL });
+        FAV = m.items; FAVDEL = m.del;
+        favSave(); favRefresh();
+      }).catch(function () {});
+    }
+    function slim(v) { return { id: v.id, mt: v.mt, name: v.name, pic: v.pic, rate: v.rate, sub: v.sub, year: v.year, eps: v.eps, ts: Date.now() }; }
+    function favToggle(v) {
+      if (!v) return;
+      var had = favHas(v.id);
+      FAV = FAV.filter(function (x) { return String(x.id) !== String(v.id); });
+      if (!had) { FAV.unshift(slim(v)); delete FAVDEL[String(v.id)]; } else FAVDEL[String(v.id)] = Date.now();
+      favSave(); favRefresh();
+      toast(had ? "已取消收藏" : "已加入收藏", 1800);
+    }
+    function favRemove(ids) {
+      var del = {};
+      for (var i = 0; i < ids.length; i += 1) { del[String(ids[i])] = 1; FAVDEL[String(ids[i])] = Date.now(); }
+      FAV = FAV.filter(function (x) { return !del[String(x.id)]; });
+      favSave(); favRefresh();
+    }
+    function favUI() {
+      var g = $("favGrid");
+      if (!g) return;
+      $("favKeepBtn").hidden = page !== "fav" || !(window.fm && typeof fm.openKeep === "function");
+      if (page !== "fav") return;
+      var sig = "", i;
+      for (i = 0; i < FAV.length; i += 1) sig += FAV[i].id + ";";
+      if (g._sig === sig && g.firstChild) {   // unchanged: skip the rebuild entirely (no DOM churn)
+        $("favNote").textContent = FAV.length ? "共 " + FAV.length + " 部 · 本机网页收藏 · App 内收藏请点「打开 App 收藏」" : "还没有收藏：详情页点「♡ 收藏」；App 收藏请点「打开 App 收藏」";
+        return;
+      }
+      g._sig = sig;
+      var h = "";
+      for (i = 0; i < FAV.length; i += 1) h += cardHTML(FAV[i], {});
+      g.innerHTML = h;
+      $("favNote").textContent = FAV.length ? "共 " + FAV.length + " 部 · 本机网页收藏 · App 内收藏请点「打开 App 收藏」" : "还没有收藏：详情页点「♡ 收藏」；App 收藏请点「打开 App 收藏」";
+      schedulePump();
+    }
+
+    /* ---------- watch state: LOCAL ONLY. Progress = the app's own on-device history (fm.history); 已看完 marks, 收藏 and
+       hidden 继续观看 entries live in fm.cache / localStorage on this device. No server/cloud sync, no sync code. ---------- */
+    var MARK_KEY = "wexMarks", MARKS = {}, CWH_KEY = "wexCwHide", CWH = {};
+    function histOf(v) { return v && v.name ? HIST_N[normName(v.name)] || null : null; }
+    function histEp(h) { var m = /(\d+)/.exec(h && h.vodRemarks || ""); return m ? Number(m[1]) : 0; }
+    function wstate(v) {
+      if (MARKS[v.id]) return { s: "done" };
+      var h = histOf(v);
+      if (h) {
+        var pos = Number(h.position) || 0, dur = Number(h.duration) || 0;
+        return { s: "prog", f: dur > 0 && pos > 0 ? Math.min(0.97, Math.max(0.04, pos / dur)) : 0.5, h: h };
+      }
+      return { s: "none" };
+    }
+    function markHTML(v) {
+      if (v.hk) return "";
+      var w = wstate(v);
+      if (w.s === "done") return '<span class="wdone" title="已看完">&#10003;</span>';
+      if (w.s === "prog") return '<span class="wbar"><i style="width:' + (w.f * 100).toFixed(1) + '%"></i></span>';
+      return "";
+    }
+    function markAll() {
+      var ms = document.querySelectorAll(".card[data-k] .wm");
+      for (var i = 0; i < ms.length; i += 1) {
+        var c = ms[i];
+        while (c && !(c.getAttribute && c.getAttribute("data-k"))) c = c.parentNode;
+        var v = c ? ITEMS[Number(c.getAttribute("data-k"))] : null;
+        if (v) { var h = markHTML(v); if (ms[i].innerHTML !== h) ms[i].innerHTML = h; }
+      }
+    }
+    function toggleDone(v) {
+      if (!v) return;
+      if (MARKS[v.id]) { delete MARKS[v.id]; toast("已取消“已看完”", 1500); }
+      else { MARKS[v.id] = Date.now(); toast("已标记为已看完", 1500); }
+      kvSet(MARK_KEY, JSON.stringify(MARKS));
+      sheetState(v); markAll(); heroDoneBtn();
+    }
+
+
+    /* ---------- cards ---------- */
+    function rateTxt(r) { return r ? (Math.round(r * 10) / 10).toFixed(1) : ""; }
+    function cardHTML(v, opt) {
+      opt = opt || {};
+      var k = ITEMS.length;
+      ITEMS.push(v);
+      var cls = "card" + (opt.rank ? " card-top" + (opt.rank >= 10 ? " r10" : "") : "") + (v.hk ? " card-cw" : "");
+      var sub, last = "";
+      if (v.hk) { sub = v.sub || ""; last = v.remarks || ""; }
+      else {
+        var g = v.sub ? v.sub.split(" / ") : [];
+        sub = [v.year, g[2] || g[1] || ""].filter(function (x) { return x; }).join(" · ");
+        var h = histOf(v);
+        if (h && h.vodRemarks) last = "看到 " + clean(h.vodRemarks);
+      }
+      var pic = v.hk ? v.pic : dPoster(v.pic, "s");
+      var poster = '<span class="poster"><span class="shadow"></span><span class="ph">' + esc(v.name) + "</span>" +
+        '<img alt="" decoding="async" data-src="' + esc(pic) + '">' +
+        (!v.hk && v.rate ? '<span class="dscore">' + rateTxt(v.rate) + "</span>" : "") +
+        (v.hk ? '<span class="prog"><i style="-webkit-transform:scaleX(' + v.p + ");transform:scaleX(" + v.p + ')"></i></span>' : '<span class="wm">' + markHTML(v) + "</span>") +
+        '<span class="mini"><b>' + esc(v.name) + "</b>" + (sub ? "<em>" + esc(sub) + "</em>" : "") +
+        (last ? '<em class="last">' + esc(last) + "</em>" : "") + "</span>" +
+        '<span class="glow"></span></span>';
+      var html = '<button type="button" class="' + cls + '" data-k="' + k + '" aria-label="' + esc(v.name) + '">';
+      if (opt.rank) html += '<span class="rank" aria-hidden="true">' + opt.rank + '</span><span class="poster-box">' + poster + "</span>";
+      else html += poster;
+      html += '<span class="cap">' + esc(v.name) + "</span>" + (opt.cap2 ? '<span class="cap2">' + esc(opt.cap2) + "</span>" : "") + "</button>";
+      return html;
+    }
+    function skeleton(n) {
+      var h = "";
+      for (var i = 0; i < n; i += 1) h += '<div class="card skel"><span class="poster"></span></div>';
+      return h;
+    }
+
+    /* ---------- rows ---------- */
+    function makeRow(id, title, sub) {
+      var sec = document.createElement("section");
+      sec.className = "row";
+      sec.id = "row-" + id;
+      sec.setAttribute("data-row", id);
+      sec.innerHTML = '<h2 class="row-title">' + esc(title) + (sub ? "<small>" + esc(sub) + "</small>" : "") + "</h2>" +
+        '<div class="row-wrap"><button type="button" class="arrow l hide" tabindex="-1" aria-label="向左"><span>&#8249;</span></button>' +
+        '<div class="row-scroll"><div class="track">' + skeleton(8) + "</div></div>" +
+        '<button type="button" class="arrow r" tabindex="-1" aria-label="向右"><span>&#8250;</span></button></div>';
+      $("rows").appendChild(sec);
+      var sc = sec.querySelector(".row-scroll");
+      var row = { id: id, el: sec, sc: sc, track: sec.querySelector(".track"), seen: {}, n: 0, data: [], start: 0, total: 0, busy: false, more: null };
+      sc.addEventListener("scroll", function () {
+        schedulePump();
+        updateArrows(row);
+        if (row.more && sc.scrollLeft + sc.clientWidth > sc.scrollWidth - sc.clientWidth * 0.6) row.more();
+      }, { passive: true });
+      sec.querySelector(".arrow.l").addEventListener("click", function () { scrollRow(row, -1); });
+      sec.querySelector(".arrow.r").addEventListener("click", function () { scrollRow(row, 1); });
+      ROWS[id] = row;
+      ROW_ORDER.push(id);
+      return row;
+    }
+    function scrollRow(row, dir) {
+      var sc = row.sc, d = Math.round(sc.clientWidth * 0.92) * dir;
+      if (sc.scrollBy) { try { sc.scrollBy({ left: d, behavior: "smooth" }); return; } catch (e) {} }
+      sc.scrollLeft += d;
+    }
+    function updateArrows(row) {
+      var sc = row.sc;
+      row.el.querySelector(".arrow.l").classList.toggle("hide", sc.scrollLeft < 8);
+      row.el.querySelector(".arrow.r").classList.toggle("hide", !row.more && sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 8);
+    }
+    function fillRow(row, items, opt, append) {
+      var h = "";
+      if (!append) { row.n = 0; row.seen = {}; }
+      for (var i = 0; i < items.length; i += 1) {
+        var v = items[i];
+        var sk = v.hk || v.id;
+        if (row.seen[sk]) continue;
+        if (opt && opt.rank && row.n >= 10) break;
+        row.seen[sk] = 1;
+        row.n += 1;
+        var o = {};
+        if (opt && opt.rank) o.rank = row.n;
+        h += cardHTML(v, o);
+      }
+      var tmp = document.createElement("div");
+      tmp.innerHTML = h + '<span class="end"></span>';
+      if (!append) row.track.innerHTML = "";
+      var end = row.track.querySelector(".end");
+      if (end) row.track.removeChild(end);
+      while (tmp.firstChild) row.track.appendChild(tmp.firstChild);
+      row.el.hidden = row.n === 0;
+      placeHeart();
+      updateArrows(row);
+      schedulePump();
+    }
+    function placeHeart() {
+      var b = $("homeFav"), hh = $("homeHist");
+      if (!b) return;
+      for (var i = 0; i < ROW_ORDER.length; i += 1) {
+        var r = ROWS[ROW_ORDER[i]];
+        if (r && !r.el.hidden) {
+          var h = r.el.querySelector(".row-title");
+          if (b.parentNode !== h) h.appendChild(b);
+          b.hidden = false;
+          if (hh) { if (hh.parentNode !== h) h.appendChild(hh); hh.hidden = false; }
+          return;
+        }
+      }
+    }
+
+    /* ---------- hero ---------- */
+    function portrait() { return (window.innerHeight || 0) > (window.innerWidth || 0) * 1.1 && (window.innerWidth || 0) < 600; }
+    function metaHTML(v, d) {
+      var g = v.sub ? v.sub.split(" / ") : [], r = (d && d.rate) || v.rate;
+      var eps = d && d.eps ? "共" + d.eps + "集" : (v.eps || "");
+      return (r ? '<span class="score">豆瓣 ' + rateTxt(r) + "</span>" : "") +
+        (v.year ? '<span class="pill">' + esc(v.year) + "</span>" : "") +
+        (eps ? '<span class="pill">' + esc(eps) + "</span>" : "") +
+        '<span class="gen">' + esc([g[1], g[2]].filter(function (x) { return x; }).join(" · ")) + "</span>";
+    }
+    var HERO_LAYER = 0, heroSeq = 0, heroRotT = 0, lastKeyAt = 0, lastMoveAt = 0;
+    function heroImg(url) {   // crossfade between two stacked layers (opacity only)
+      var seq = ++heroSeq;
+      whenReady(function () {
+        var src = imgSrc(url);
+        if (!src || seq !== heroSeq) return;
+        var a = $(HERO_LAYER ? "heroBg2" : "heroBg"), b = $(HERO_LAYER ? "heroBg" : "heroBg2");
+        if (a.className.indexOf("on") >= 0 && a.getAttribute("src") === src) return;
+        var done = function () {
+          if (seq !== heroSeq) return;
+          b.className = "hero-bg on"; a.className = "hero-bg"; HERO_LAYER = 1 - HERO_LAYER;
+        };
+        b.onload = done; b.onerror = function () {};
+        if (b.getAttribute("src") === src && b.complete) done(); else b.src = src;
+      });
+    }
+    function posterL(u) {
+      var m = /\/(p\d+)\.(?:jpg|jpeg|webp|png)/i.exec(u || ""), h = /\b(img\d)\.doubanio\.com/.exec(u || "");
+      return m ? "https://" + (h ? h[1] : "img2") + ".doubanio.com/view/photo/l/public/" + m[1] + ".webp" : u;
+    }
+    function dbStill(v) {   // first landscape still of the title (Douban photos), large webp (~65 KB)
+      return cached("s:" + v.mt + v.id, 7 * 24 * 3600000, function () {
+        return dbFetch(v.mt + "/" + v.id + "/photos?start=0&count=30").then(function (d) {
+          var ps = (d && d.photos) || [];
+          for (var i = 0; i < ps.length; i += 1) {
+            var L = ps[i] && ps[i].image && ps[i].image.large;
+            if (L && L.width && L.height && L.width / L.height >= 1.45) {
+              var m = /\/(p\d+)\.(?:jpg|jpeg|webp)/.exec(L.url || ""), h = /\b(img\d)\.doubanio/.exec(L.url || "");
+              if (m) return "https://" + (h ? h[1] : "img2") + ".doubanio.com/view/photo/l/public/" + m[1] + ".webp";
+            }
+          }
+          return "";
+        });
+      });
+    }
+    function heroText(v, d) {
+      var g = v.sub ? v.sub.split(" / ") : [];
+      var gen = d && d.genres ? d.genres.split(" ").slice(0, 3) : (g[2] ? g[2].split(" ").slice(0, 3) : []);
+      var type = v.mt === "tv" ? (/综艺|真人秀|脱口秀/.test(gen.join("")) ? "综艺" : (/动画/.test(gen.join("")) ? "动画剧集" : "剧集")) : "电影";
+      $("heroCat").textContent = type;                 // brand row: WEX + 電影
+      $("heroGen").textContent = gen.join(" · ");      // gold tagline (genres only)
+      $("heroDesc").textContent = d && d.intro ? d.intro : "";
+      var r = (d && d.rate) || v.rate, y = (d && d.year) || v.year, eps = d && d.eps ? "共" + d.eps + "集" : "";
+      var ep2 = (d && d.epinfo) || (v.eps && !/^共/.test(v.eps) ? v.eps : "");
+      var reg = d && d.countries ? d.countries.split(" ")[0] : String(g[1] || "").split(" ")[0];
+      $("heroMeta").innerHTML = (r ? '<span class="score">豆瓣 ' + rateTxt(r) + "</span>" : "") + (y ? '<span class="pill">' + esc(y) + "</span>" : "") +
+        (reg ? '<span class="pill">' + esc(reg) + "</span>" : "") + (eps ? '<span class="pill">' + esc(eps) + "</span>" : "") + (ep2 ? '<span class="pill">' + esc(ep2) + "</span>" : "");
+      var cr = "";
+      function castList(names, max) {
+        var arr = String(names || "").split(" / "), out = [];
+        for (var i = 0; i < arr.length && out.length < max; i += 1) {
+          if (arr[i]) out.push('<button type="button" class="hcast" data-kw="' + esc(arr[i]) + '">' + esc(arr[i]) + "</button>");
+        }
+        return out.join('<span class="csep">、</span>');
+      }
+      var ah = castList(d && d.actors, 2), dh = castList(d && d.directors, 1);
+      if (ah) cr += "<div><span>主演</span> " + ah + "</div>";
+      if (dh) cr += "<div><span>导演</span> " + dh + "</div>";
+      $("heroCredits").innerHTML = cr;
+      heroDoneBtn();
+    }
+    function heroDoneBtn() { return; }   // hero ✓ button removed; kept as a no-op for old callers
+    function setHero(v, tag) {
+      featured = v;
+      picRemember(v);
+      var hero = $("hero"), por = portrait();
+      hero.className = "hero " + (por ? "por" : "land");
+      $("heroTag").textContent = tag || "";
+      $("heroTitle").textContent = v.name;
+      heroText(v, v.detail);
+      if (por) heroImg(dPoster(v.pic, "m"));
+      else if (v.still !== undefined) heroImg(v.still || posterL(v.pic));
+      else {
+        var got = false, t = setTimeout(function () { if (!got && featured === v) heroImg(posterL(v.pic)); }, 1500);
+        dbStill(v).then(function (u) { got = true; clearTimeout(t); v.still = u || ""; if (featured === v && !portrait()) heroImg(v.still || posterL(v.pic)); })
+          .catch(function () { got = true; clearTimeout(t); v.still = ""; if (featured === v) heroImg(posterL(v.pic)); });
+      }
+      if (!v.detail) dbDetail(v).then(function (d) { v.detail = d; if (featured === v) heroText(v, d); }).catch(function () {});
+      heroResume();
+    }
+    function heroResume() {
+      if (!featured) return;
+      var h = histOf(featured), ep = histEp(h);
+      $("heroPlay").innerHTML = "<i>&#9654;</i>" + (h ? (ep ? "继续第" + ep + "集" : "继续播放") : "搜索播放");
+    }
+    function heroRotate() {   // slow crossfade rotation; paused while the user is active, scrolled away, or in another level
+      clearTimeout(heroRotT);
+      heroRotT = setTimeout(function () {
+        heroRotate();
+        if (document.hidden || modalItem || page || searchMode || !featured || HERO_POOL.length < 2 || !$("qa").hidden) return;
+        if ((window.pageYOffset || 0) > 80 || Date.now() - lastKeyAt < 8000) return;
+        var pool = HERO_POOL.filter(function (x) { return !MARKS[x.v.id] && x.v.rate >= 7; });
+        if (pool.length < 3) pool = HERO_POOL.filter(function (x) { return !MARKS[x.v.id]; });
+        if (pool.length < 2) pool = HERO_POOL;
+        var x = null;
+        if (heroNext && Date.now() - heroNextAt < 25000 && pool.indexOf(heroNext) >= 0) x = heroNext;   // prefetched pick
+        else x = heroRand(pool) || pool[0];
+        heroNext = null;
+        setHero(x.v, x.tag);
+        heroStageNext(7000);
+      }, 16000);
+    }
+
+    /* ---------- actions ---------- */
+    function appSearch(kw, v) {
+      kw = clean(kw);
+      if (!kw) return;
+      if (v) picRemember(v);
+      if (window.fm && typeof fm.search === "function") {
+        var opt = { direct: true };
+        if (v && v.pic) { try { opt.pic = imgSrc(dPoster(v.pic, "m")); } catch (e) {} }
+        if (v && v.still) { try { var wp = imgSrc(v.still); if (wp) opt.wallPic = wp; } catch (e) {} }
+        try { Promise.resolve(fm.search(kw, opt)).catch(function (e) { toast("搜索失败：" + (e && e.message ? e.message : e)); }); }
+        catch (e) { toast("搜索失败"); }
+      } else {
+        toast("浏览模式：请在 webhtv App 中打开本页，搜索播放《" + kw + "》", 3200);
+      }
+    }
+    function resumeHist(h) {
+      if (!h) return false;
+      var parts = String(h.key || "").split("@@@");
+      if (!parts[0] || !parts[1] || !(window.fm && typeof fm.vod === "function")) return false;
+      try { Promise.resolve(fm.vod(parts[0], parts.slice(1).join("@@@"), h.vodName || "", h.vodPic || "")).catch(function (e) { toast("打开失败：" + (e && e.message ? e.message : e)); }); }
+      catch (e) { toast("打开失败"); }
+      return true;
+    }
+    function play(v) {   // hero / sheet main button: resume when the app has history for this title, else in-app search
+      if (!v) return;
+      picRemember(v);
+      if (v.hk) { if (!resumeHist(HIST[v.hk])) toast("浏览模式：请在 webhtv App 中继续观看"); return; }
+      var h = histOf(v);
+      if (h && resumeHist(h)) return;
+      appSearch(v.name, v);
+    }
+    function sheetState(v) {
+      if (!v || modalItem !== v) return;
+      var b = $("sheetDone"), on = !!MARKS[v.id];
+      b.innerHTML = "&#10003;";
+      b.className = on ? "btn dp-round on" : "btn dp-round";
+      b.setAttribute("data-l", on ? "已看完" : "标记看完");
+      b.setAttribute("aria-label", on ? "取消已看完" : "标记已看完");
+      var h = histOf(v), ep = histEp(h), r = $("sheetResume");
+      if (h) {
+        r.hidden = false;
+        r.innerHTML = "<i>&#9654;</i>" + (ep ? "继续第" + ep + "集" : "继续播放");
+        $("sheetPlay").innerHTML = "<i>&#8981;</i>换源搜索";
+      } else {
+        r.hidden = true;
+        $("sheetPlay").innerHTML = "<i>&#9654;</i>搜索播放";
+      }
+      var alt = baseTitle(v.name), a = $("sheetAlt");
+      a.hidden = !alt;
+      if (alt) a.textContent = "搜「" + alt + "」";
+    }
+    /* ---------- Infuse-style detail page: own #detail level; 相关推荐 opens nested #detail levels (DSTACK) ---------- */
+    var DSTACK = [], DLV = 0;
+    function dpDefault() { return $("sheetResume").hidden ? $("sheetPlay") : $("sheetResume"); }
+    function fmtCount(n) { return n >= 10000 ? (Math.round(n / 1000) / 10) + "万" : String(n); }
+    function dpMetaHTML(v, d) {
+      var g = v.sub ? v.sub.split(" / ") : [], parts = [];
+      var y = (d && d.year) || v.year || (/^\d{4}$/.test(g[0] || "") ? g[0] : "");
+      var reg = d && d.countries ? d.countries.split(" ").slice(0, 2).join(" ") : (g[1] || "");
+      var gen = d && d.genres ? d.genres.split(" ").slice(0, 3).join(" ") : (g[2] || "");
+      var len = d ? (d.eps ? "共" + d.eps + "集" : (d.durations.split(" ")[0] || "").replace(/\(.*?\)/g, "")) : (v.eps || "");
+      if (y) parts.push(y);
+      if (reg) parts.push(reg);
+      if (gen) parts.push(gen);
+      if (len) parts.push(len);
+      return parts.map(function (x) { return "<span>" + esc(x) + "</span>"; }).join("");
+    }
+    function dpRateHTML(v, d) {
+      var r = (d && d.rate) || v.rate, h = "";
+      if (r) {
+        h += '<span class="rpill"><span class="db">豆</span><b>' + rateTxt(r) + '</b><span class="stars">★★★★★<i style="width:' + Math.max(0, Math.min(100, r * 10)).toFixed(0) + '%">★★★★★</i></span>' +
+          (d && d.rcount ? "<em>" + fmtCount(d.rcount) + "人评价</em>" : "") + "</span>";
+      } else h += '<span class="rpill plain">豆瓣 暂无评分</span>';
+      var ep = (d && d.epinfo) || (v.eps && !/^共/.test(v.eps) ? v.eps : "");
+      if (ep) h += '<span class="rpill plain">' + esc(ep) + "</span>";
+      return h;
+    }
+    function dpKvHTML(v) {
+      var d = v.detail || {}, h = "", tv = v.mt === "tv";
+      var add = function (k, x) { if (x) h += '<div class="dp-kv"><dt>' + k + "</dt><dd>" + esc(x) + "</dd></div>"; };
+      add("导演", d.directors); add("编剧", v.credits ? v.credits.writers : ""); add("主演", d.actors);
+      add(tv ? "首播" : "上映", d.pubdate); if (tv) add("集数", d.eps ? d.eps + " 集" : "");
+      add(tv ? "单集片长" : "片长", d.durations); add("类型", d.genres); add("地区", d.countries); add("语言", d.langs); add("又名", d.aka);
+      return h;
+    }
+    function dpDesc(t) {
+      var p = $("sheetDesc"), mb = $("dpMore");
+      p.textContent = t; p.className = "clamp"; mb.hidden = true; mb.textContent = "更多";
+      setTimeout(function () { if (p.className === "clamp") mb.hidden = !(p.scrollHeight > p.clientHeight + 3); }, 60);
+    }
+    function dpToggleMore() {
+      var p = $("sheetDesc"), mb = $("dpMore"), open = p.className === "clamp";
+      p.className = open ? "" : "clamp"; mb.textContent = open ? "收起" : "更多";
+      focusEl(mb);
+    }
+    function dpKv(v) { $("sheetKv").innerHTML = dpKvHTML(v); $("dpInfoSec").hidden = !$("sheetKv").innerHTML; }
+    function dpCastFill(v) {
+      var c = v.credits, l = c ? c.cast : [], h = "";
+      for (var i = 0; i < l.length; i += 1) {
+        var x = l[i];
+        h += '<button type="button" class="dp-cast" data-ci="' + i + '" aria-label="' + esc(x.n + " " + x.r) + '"><span class="dp-av"><span>' + esc(x.n.charAt(0)) + "</span>" +
+          (x.a ? '<img alt="" decoding="async" data-src="' + esc(x.a) + '">' : "") + '</span><span class="dp-cn">' + esc(x.n) + '</span><span class="dp-cr">' + esc(x.r) + "</span></button>";
+      }
+      $("dpCast").innerHTML = h; $("dpCast").scrollLeft = 0; $("dpCastSec").hidden = !h;
+      schedulePump();
+    }
+    function dpRecFill(v) {
+      var l = v.recs || [], h = "";
+      for (var i = 0; i < l.length; i += 1) {
+        var m = l[i];
+        h += '<button type="button" class="dp-rec" data-ri="' + i + '" data-rid="' + esc(m.id) + '" aria-label="' + esc(m.name) + '"><span class="dp-rp"><span class="ph">' + esc(m.name) + '</span><img alt="" decoding="async" data-src="' + esc(dPoster(m.pic, "s")) + '">' +
+          (m.rate ? '<span class="dscore">' + rateTxt(m.rate) + "</span>" : "") + '</span><span class="dp-rt">' + esc(m.name) + "</span></button>";
+      }
+      $("dpRecs").innerHTML = h; $("dpRecs").scrollLeft = 0; $("dpRecSec").hidden = !h;
+      schedulePump();
+    }
+    function dpFillDetail(v) {
+      var d = v.detail;
+      $("sheetMeta").innerHTML = dpMetaHTML(v, d);
+      $("dpRate").innerHTML = dpRateHTML(v, d);
+      $("dpOrig").textContent = d && d.orig && d.orig !== v.name ? d.orig : "";
+      dpKv(v);
+    }
+    function dpRender(v) {
+      modalItem = v;
+      $("sheetTitle").textContent = v.name;
+      $("dpPh").textContent = v.name;
+      var po = $("sheetPoster");
+      po.className = ""; po.removeAttribute("src");
+      blurBg($("dpBgC"), dPoster(v.pic, "s"));   // full-bleed soft backdrop: tiny canvas upscaled (no CSS blur)
+      setImg(po, dPoster(v.pic, "m"));           // sharp poster
+      dpFillDetail(v);
+      dpDesc(v.detail ? v.detail.intro || "暂无简介" : "加载中…");
+      dpCastFill(v); dpRecFill(v);
+      sheetState(v); favBtn();
+      if (!v.detail) dbDetail(v).then(function (d) { v.detail = d; if (modalItem !== v) return; dpFillDetail(v); dpDesc(d.intro || "暂无简介"); }).catch(function () { if (modalItem === v) dpDesc(v.sub || "简介加载失败"); });
+      if (!v.credits) dbCast(v).then(function (c) { v.credits = c; if (modalItem === v) { dpCastFill(v); dpKv(v); } }).catch(function () {});
+      if (!v.recs) dbRecs(v).then(function (r) { v.recs = r; if (modalItem === v) dpRecFill(v); }).catch(function () {});
+    }
+    var blurSeq = 0;
+    function blurBg(cv, url) {
+      var seq = ++blurSeq;
+      cv.className = "";
+      whenReady(function () {
+        var src = imgSrc(url);
+        if (!src) return;
+        var img = new Image();
+        img.onload = function () {
+          if (seq !== blurSeq) return;
+          try {
+            var vw = window.innerWidth || 1280, vh = window.innerHeight || 720, w = 40, h = Math.max(16, Math.min(90, Math.round(40 * vh / vw)));
+            var t = document.createElement("canvas"); t.width = w * 3; t.height = h * 3;
+            var tx = t.getContext("2d"), ir = img.width / img.height, cr = t.width / t.height, sw, sh, sx, sy;
+            if (ir > cr) { sh = img.height; sw = sh * cr; sx = (img.width - sw) / 2; sy = 0; } else { sw = img.width; sh = sw / cr; sx = 0; sy = (img.height - sh) * 0.3; }
+            tx.drawImage(img, sx, sy, sw, sh, 0, 0, t.width, t.height);
+            cv.width = w; cv.height = h;
+            var c = cv.getContext("2d");
+            c.drawImage(t, 0, 0, w, h);
+            c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(0, 0, w, h);
+            cv.className = "ok";
+          } catch (e) {}
+        };
+        img.src = src;
+      });
+    }
+    function dpEnter() {   // replay the fade + scale entrance for nested pages
+      var i = $("dpIn"), st = i.style;
+      st.webkitTransition = st.transition = "none"; st.opacity = "0"; st.webkitTransform = st.transform = "scale(1.035)";
+      void i.offsetWidth;
+      st.webkitTransition = st.transition = ""; st.opacity = ""; st.webkitTransform = st.transform = "";
+    }
+    function preloadArt(v) {   // native Glide warm-up so the play page opens with art ready (SDK 18.4)
+      if (!v || !window.fm || typeof fm.preloadArtwork !== "function" || !v.pic) return;
+      var pic = "";
+      try { pic = imgSrc(dPoster(v.pic, "m")) || ""; } catch (e) {}
+      if (!pic) return;
+      var use = function (w) {
+        try { Promise.resolve(fm.preloadArtwork(pic, w ? (imgSrc(w) || "") : "")).catch(function () {}); } catch (e) {}
+      };
+      if (v.still) use(v.still);
+      else dbStill(v).then(function (u) { use(u || ""); }).catch(function () {});
+    }
+    function openInfo(v) {
+      if (!v) return;
+      if (v.hk) { play(v); return; }
+      picRemember(v);
+      preloadArt(v);
+      var m = $("modal");
+      if (modalItem) {   // nested (相关推荐): push another #detail level
+        if (modalItem === v || String(modalItem.id) === String(v.id)) return;
+        var a = document.activeElement;
+        DSTACK.push({ v: modalItem, y: m.scrollTop, rid: a && a.getAttribute ? a.getAttribute("data-rid") : null });
+        navPush("detail"); DLV = navDepth();
+        dpRender(v); m.scrollTop = 0; dpEnter();
+        focusEl(dpDefault());
+        return;
+      }
+      lastFocus = document.activeElement;
+      lastFocusMemo = focusMemo();
+      DSTACK = [];
+      dpRender(v);
+      m.scrollTop = 0;
+      m.className = "dp open";
+      m.setAttribute("aria-hidden", "false");
+      root.classList.add("dp-on");
+      navPush("detail"); DLV = navDepth();
+      focusEl(dpDefault());
+      schedulePump();
+    }
+    function dpPop() {
+      var st = DSTACK.pop();
+      if (!st) return;
+      DLV = navDepth();
+      dpRender(st.v); dpEnter();
+      var m = $("modal"), f = null;
+      m.scrollTop = st.y;
+      if (st.rid) { var rs = $("dpRecs").querySelectorAll(".dp-rec"); for (var i = 0; i < rs.length; i += 1) if (rs[i].getAttribute("data-rid") === st.rid) f = rs[i]; }
+      if (isTV() || root.className.indexOf(" kbd") >= 0) focusEl(f || dpDefault());
+      schedulePump();
+    }
+    function closeInfo(fromPop) {
+      if (!modalItem) return;
+      if (!fromPop && navTop() === "detail") { navGo(1); return; }   // one level back; popstate closes or pops the nested page
+      if (!fromPop && DSTACK.length) { dpPop(); return; }
+      modalItem = null; DSTACK = [];
+      $("modal").className = "dp";
+      $("modal").setAttribute("aria-hidden", "true");
+      root.classList.remove("dp-on");
+      if (!(isTV() || root.className.indexOf(" kbd") >= 0)) {
+        try { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); } catch (e) {}
+        return;
+      }
+      if (lastFocus && document.body.contains(lastFocus) && visible(lastFocus)) focusEl(lastFocus);
+      else if (lastFocusMemo) focusRestore(lastFocusMemo);
+    }
+
+    /* ---------- quick actions (long OK >= 600 ms / MENU on a card, or MENU on the detail page): own #qa level ---------- */
+    var QA = { v: null, ret: null, after: null };
+    function qaOpen(v, from, inDetail) {
+      if (!v || !$("qa").hidden) return;
+      QA.v = v; QA.ret = from && from !== document.body ? from : null; QA.after = null;
+      var acts = [], hh = v.hk ? HIST[v.hk] : histOf(v), ep = histEp(hh), h = "";
+      if (hh) acts.push(["resume", "▶ " + (ep ? "继续第" + ep + "集" : "继续播放")]);
+      if (!v.hk) acts.push(["search", hh ? "⌕ 换源搜索" : "▶ 搜索播放"]);
+      if (!v.hk && !inDetail) acts.push(["info", "详情"]);
+      if (!v.hk) { acts.push(["fav", favHas(v.id) ? "♥ 取消收藏" : "♡ 加入收藏"]); acts.push(["done", MARKS[v.id] ? "取消已看完" : "✓ 标记已看完"]); }
+      if (window.fm) {   // native app shortcuts (SDK: openVod / openKeep / openLive / openSetting)
+        if (typeof fm.openVod === "function") acts.push(["apphome", "App 首页"]);
+        if (typeof fm.openKeep === "function") acts.push(["appkeep", "App 收藏"]);
+        if (typeof fm.openLive === "function") acts.push(["applive", "App 直播"]);
+        if (typeof fm.openSetting === "function") acts.push(["appset", "App 设置"]);
+      }
+      acts.push(["close", "取消"]);
+      for (var i = 0; i < acts.length; i += 1) h += '<button type="button" class="btn" data-qa="' + acts[i][0] + '">' + esc(acts[i][1]) + "</button>";
+      $("qaTitle").textContent = v.name;
+      $("qaBtns").innerHTML = h;
+      $("qa").hidden = false;
+      navPush("qa");
+      focusEl($("qaBtns").querySelector(".btn"));
+    }
+    function qaClose(fromPop, then) {
+      if ($("qa").hidden) return;
+      if (then) QA.after = then;
+      if (!fromPop && navTop() === "qa") { navGo(1); return; }   // popstate finishes the close, then runs the action
+      $("qa").hidden = true;
+      var r = QA.ret, f = QA.after;
+      QA.v = null; QA.ret = null; QA.after = null;
+      if (r && document.body.contains(r) && visible(r)) focusEl(r);
+      if (f) setTimeout(f, 0);
+    }
+    function qaDo(act) {
+      var v = QA.v;
+      if (!v) return;
+      qaClose(false, function () {
+        if (act === "apphome") { try { Promise.resolve(fm.openVod()).catch(function () {}); } catch (e) {} }
+        else if (act === "appkeep") { try { Promise.resolve(fm.openKeep()).catch(function () {}); } catch (e) {} }
+        else if (act === "applive") { try { Promise.resolve(fm.openLive()).catch(function () {}); } catch (e) {} }
+        else if (act === "appset") { try { Promise.resolve(fm.openSetting()).catch(function () {}); } catch (e) {} }
+        else if (act === "resume") { if (!resumeHist(v.hk ? HIST[v.hk] : histOf(v))) toast("没有找到这部影片的 App 观看记录"); }
+        else if (act === "search") appSearch(v.name, v);
+        else if (act === "info") openInfo(v);
+        else if (act === "fav") favToggle(v);
+        else if (act === "done") toggleDone(v);
+      });
+    }
+
+    /* ---------- search (Douban results + one-tap in-app search) ---------- */
+    var sTimer = 0, sSeq = 0, SR = { q: "", start: 0, total: 0, busy: false };
+    function openSearch() {
+      var s = $("search");
+      if (s.className.indexOf("open") < 0) { s.className = "search open"; $("sinput").tabIndex = 0; }
+      searchLevel();
+      try { $("sinput").focus(); } catch (e) {}
+    }
+    function searchOpen() { return $("search").className.indexOf("open") >= 0; }
+    function searchLevel() { if (navTop() !== "search") navPush("search"); }
+    function doSearch(kw) {
+      kw = clean(kw);
+      if (!kw) { exitSearch(); return; }
+      lastKw = kw;
+      if (!searchMode) { searchMode = true; searchLevel(); }
+      if (page) { $(PAGE_EL[page]).hidden = true; page = ""; navHighlight(); }
+      $("main").hidden = true;
+      $("results").hidden = false;
+      $("resTitle").textContent = "搜索“" + kw + "”";
+      $("resApp").textContent = "▶ 在 App 中搜索「" + kw + "」";
+      $("resNote").textContent = "豆瓣结果加载中…";
+      $("resGrid").innerHTML = skeleton(12);
+      window.scrollTo(0, 0);
+      SR = { q: kw, start: 0, total: 0, busy: false, seen: {} };
+      srMore(++sSeq);
+    }
+    function srMore(seq) {
+      if (SR.busy || (SR.start && SR.start >= SR.total)) return;
+      SR.busy = true;
+      seq = seq || sSeq;
+      var st = SR.start;
+      dbList({ k: "search", q: SR.q }, st, 30).then(function (d) {
+        if (seq !== sSeq) return;
+        SR.busy = false; SR.start = st + 30; SR.total = Math.min(d.total || 0, 150);
+        var h = "";
+        for (var i = 0; i < d.items.length; i += 1) { var v = d.items[i]; if (!SR.seen[v.id]) { SR.seen[v.id] = 1; h += cardHTML(v, {}); } }
+        if (st === 0) $("resGrid").innerHTML = "";
+        $("resGrid").insertAdjacentHTML("beforeend", h);
+        var n = $("resGrid").querySelectorAll(".card[data-k]").length;
+        $("resNote").textContent = n ? "豆瓣找到 " + (d.total || n) + " 部 · 点影片看详情，或直接点上方按钮在 App 全部线路中搜索" : "豆瓣没有找到相关影片，可直接点上方按钮在 App 中搜索";
+        schedulePump();
+      }).catch(function () {
+        SR.busy = false;
+        if (seq === sSeq && st === 0) { $("resNote").textContent = "豆瓣搜索失败，可直接点上方按钮在 App 中搜索"; $("resGrid").innerHTML = ""; }
+      });
+    }
+    function exitSearch(fromPop) {
+      var wasOpen = searchOpen();
+      $("sinput").value = "";
+      $("search").className = "search";
+      $("sinput").tabIndex = -1;
+      if (wasOpen && document.activeElement === $("sinput")) { try { $("sinput").blur(); } catch (e) {} }
+      if (!searchMode) { if (wasOpen && !fromPop) navBack("search"); return; }
+      searchMode = false;
+      $("results").hidden = true;
+      $("main").hidden = false;
+      if (!fromPop) navBack("search");
+      schedulePump();
+    }
+
+    /* ---------- pages: 电影 / 剧集 / 综艺 / 动漫 (Douban lists with chips) · 收藏 · 管理 ---------- */
+    var page = "", PAGE_EL = { movie: "catPage", tv: "catPage", show: "catPage", anime: "catPage", fav: "favPage", mg: "mgPage", hist: "favPage" };
+    var CATS = {
+      movie: { title: "电影", groups: [
+        { key: "cat", chips: [["热门", "热门"], ["最新", "最新"], ["豆瓣高分", "豆瓣高分"], ["冷门佳片", "冷门佳片"]] },
+        { key: "type", chips: [["全部", "全部"], ["华语", "华语"], ["欧美", "欧美"], ["韩国", "韩国"], ["日本", "日本"]] }],
+        spec: function (s) { return { k: "hot", mt: "movie", cat: s.cat, type: s.type }; } },
+      tv: { title: "剧集", groups: [
+        { key: "c", chips: [["热门", "tv"], ["国产剧", "tv_domestic"], ["欧美剧", "tv_american"], ["日剧", "tv_japanese"], ["韩剧", "tv_korean"], ["纪录片", "tv_documentary"], ["华语口碑榜", "@tv_chinese_best_weekly"], ["全球口碑榜", "@tv_global_best_weekly"]] }],
+        spec: function (s) { return s.c.charAt(0) === "@" ? { k: "col", id: s.c.slice(1) } : { k: "hot", mt: "tv", cat: "tv", type: s.c }; } },
+      show: { title: "综艺", groups: [
+        { key: "c", chips: [["热门", "show"], ["国内", "show_domestic"], ["国外", "show_foreign"], ["国内口碑榜", "@show_chinese_best_weekly"], ["国外口碑榜", "@show_global_best_weekly"]] }],
+        spec: function (s) { return s.c.charAt(0) === "@" ? { k: "col", id: s.c.slice(1) } : { k: "hot", mt: "tv", cat: "show", type: s.c }; } },
+      anime: { title: "动漫", groups: [
+        { key: "c", chips: [["新番热播", "hot"], ["日本动画", "jp"], ["国产动画", "cn"], ["欧美动画", "us"], ["动画电影", "film"]] }],
+        spec: function (s) {
+          if (s.c === "film") return { k: "rec", mt: "movie", sel: { "类型": "动画" }, tags: "动画" };
+          if (s.c === "jp") return { k: "rec", mt: "tv", sel: { "形式": "动画", "地区": "日本" }, tags: "动画,日本" };
+          if (s.c === "cn") return { k: "rec", mt: "tv", sel: { "形式": "动画", "地区": "华语" }, tags: "动画,华语" };
+          if (s.c === "us") return { k: "rec", mt: "tv", sel: { "形式": "动画", "地区": "欧美" }, tags: "动画,欧美" };
+          return { k: "hot", mt: "tv", cat: "tv", type: "tv_animation" };
+        } }
+    };
+    var CAT = { name: "", sel: {}, start: 0, total: 0, busy: false, seq: 0, seen: {}, empty: 0 };
+    function catDefaults(name) { var s = {}, gs = CATS[name].groups; for (var i = 0; i < gs.length; i += 1) s[gs[i].key] = gs[i].chips[0][1]; return s; }
+    function catInit(name) {
+      var c = CATS[name];
+      CAT.name = name;
+      CAT.sel = CAT["sel_" + name] || catDefaults(name);
+      $("catTitle").textContent = c.title;
+      var h = "";
+      for (var i = 0; i < c.groups.length; i += 1) {
+        var g = c.groups[i];
+        h += '<div class="chips" data-group="' + g.key + '">';
+        for (var j = 0; j < g.chips.length; j += 1) h += '<button type="button" class="chip' + (CAT.sel[g.key] === g.chips[j][1] ? " on" : "") + '" data-ck="' + g.key + '" data-cv="' + esc(g.chips[j][1]) + '">' + esc(g.chips[j][0]) + "</button>";
+        h += "</div>";
+      }
+      $("catChips").innerHTML = h;
+      catReset();
+    }
+    function catReset() {
+      CAT.start = 0; CAT.total = 0; CAT.busy = false; CAT.seen = {}; CAT.empty = 0; CAT.seq += 1;
+      $("catGrid").innerHTML = skeleton(12);
+      $("catNote").textContent = "加载中…";
+      catMore();
+    }
+    function catMore() {
+      if (!CATS[page] || CAT.busy || (CAT.start && CAT.start >= CAT.total) || CAT.empty >= 2) return;
+      CAT.busy = true;
+      var st = CAT.start, seq = CAT.seq, spec = CATS[CAT.name].spec(CAT.sel), cnt = spec.k === "col" ? 20 : 30;
+      dbList(spec, st, cnt).then(function (d) {
+        if (seq !== CAT.seq) return;
+        CAT.busy = false;
+        CAT.start = st + cnt;
+        CAT.total = Math.min(d.total || 0, 600);
+        if (!d.n) CAT.empty += 1;
+        var h = "";
+        for (var i = 0; i < d.items.length; i += 1) { var v = d.items[i]; if (!CAT.seen[v.id]) { CAT.seen[v.id] = 1; h += cardHTML(v, {}); } }
+        var g = $("catGrid");
+        if (st === 0) g.innerHTML = "";
+        g.insertAdjacentHTML("beforeend", h);
+        var n = g.querySelectorAll(".card[data-k]").length, end = CAT.start >= CAT.total || CAT.empty >= 2;
+        $("catNote").textContent = n ? "已加载 " + n + " 部" + (end ? " · 已全部加载" : " · 下滑加载更多") + " · 豆瓣数据" : "暂无内容";
+        schedulePump();
+        if (!end && n && document.documentElement.scrollHeight < (window.innerHeight || 800) * 1.6) catMore();
+      }).catch(function () { CAT.busy = false; if (seq === CAT.seq && st === 0) { $("catNote").textContent = "加载失败，请稍后重试"; $("catGrid").innerHTML = ""; } });
+    }
+    var navPending = 0;
+    function navUrl(tag) { return location.pathname + location.search + (tag ? "#" + tag : ""); }
+    function navTop() { var s = history.state; return s && s.wx ? String(s.wx) : ""; }
+    function navDepth() { var s = history.state; return s && s.wx ? Number(s.d) || 1 : 0; }
+    var RETS = [], RET_SKIP = 0;   // focus to restore when the user comes back to a level (indexed by depth)
+    function navPush(tag) {
+      var a = document.activeElement, k = a && a.getAttribute ? a.getAttribute("data-k") : null;
+      if (a === $("sinput")) a = $("sbtn");
+      RETS[navDepth()] = { el: a && a !== document.body ? a : null, id: k !== null && ITEMS[Number(k)] ? mid(ITEMS[Number(k)]) : "" };
+      try { history.pushState({ wx: tag, d: navDepth() + 1 }, "", navUrl(tag)); } catch (e) {}
+    }
+    function retFocus(d) {
+      var r = RETS[d];
+      RETS.length = Math.min(RETS.length, d);
+      if (!r || Date.now() - RET_SKIP < 1500 || !(isTV() || root.className.indexOf(" kbd") >= 0)) return;
+      if (r.el && document.body.contains(r.el) && visible(r.el)) { focusEl(r.el); return; }
+      if (r.id) {
+        var cs = document.querySelectorAll(".card[data-k]");
+        for (var i = 0; i < cs.length; i += 1) if (visible(cs[i]) && mid(ITEMS[Number(cs[i].getAttribute("data-k"))]) === r.id) { focusEl(cs[i]); return; }
+      }
+    }
+    function navReplace(tag) { try { history.replaceState({ wx: tag, d: navDepth() || 1 }, "", navUrl(tag)); } catch (e) {} }
+    function navGo(n) {
+      if (navPending || n <= 0) return;
+      navPending = Date.now();
+      setTimeout(function () { if (navPending && Date.now() - navPending >= 1400) navPending = 0; }, 1500);
+      try { history.go(-n); } catch (e) { navPending = 0; }
+    }
+    function navBack(tag) { if (navTop() === tag) navGo(1); }
+    function navHome() { navGo(navDepth()); }
+    try { if (/^#(detail|search|movie|tv|show|anime|fav|mg|confirm|qa|hist)$/.test(location.hash || "")) history.replaceState(null, "", navUrl("")); } catch (e) {}
+    function navHighlight() {
+      var nbs = document.querySelectorAll("#nav button");
+      var target = page === "hist" ? "fav" : (page === "mg" ? (MG.from || "") : page);
+      for (var q = 0; q < nbs.length; q += 1) {
+        var go = nbs[q].getAttribute("data-go");
+        nbs[q].className = (page ? go === target : (!searchMode && nbs[q].id === "navHome")) ? "on" : "";
+      }
+    }
+    function favTabSync(name) {   // 收藏与历史: one page, two tabs
+      var hist = name === "hist";
+      $("favH2").textContent = hist ? "最近看过" : "我的收藏";
+      $("favGrid").hidden = hist; $("favNote").hidden = hist;
+      $("histGrid").hidden = !hist; $("histNote").hidden = !hist;
+      $("favManage").hidden = hist;
+      $("histManage").hidden = !hist || !cwList().length;
+      $("favKeepBtn").hidden = hist || !(window.fm && typeof fm.openKeep === "function");
+      var ts = $("favTabs").querySelectorAll(".chip");
+      for (var i = 0; i < ts.length; i += 1) ts[i].className = ts[i].getAttribute("data-ft") === name ? "chip on" : "chip";
+    }
+    function openPage(name) {
+      var was = page || (searchMode || navTop() === "search" ? "search" : "");
+      if (searchMode) exitSearch(true);
+      if (!was || name === "mg") navPush(name);
+      else if (was !== name) navReplace(name);
+      showPage(name);
+    }
+    function showPage(name) {
+      if (page && page !== name) $(PAGE_EL[page]).hidden = true;
+      page = name;
+      $("main").hidden = true;
+      $(PAGE_EL[name]).hidden = false;
+      window.scrollTo(0, 0);
+      if (CATS[name] && CAT.name !== name) catInit(name);
+      if (name === "fav") { favTabSync("fav"); favUI(); }
+      if (name === "hist") { favTabSync("hist"); histUI(); refreshHistory(); }
+      navHighlight();
+      schedulePump();
+    }
+    function exitPage(fromPop) {
+      if (!page) return;
+      $(PAGE_EL[page]).hidden = true;
+      page = "";
+      $("main").hidden = false;
+      navHighlight();
+      if (!fromPop) navHome();
+      schedulePump();
+    }
+    function kbdFocus(el) { if (el && (isTV() || root.className.indexOf(" kbd") >= 0)) focusEl(el); }
+    function pageFocus(name) {
+      if (CATS[name]) kbdFocus(document.querySelector("#catChips .chip.on"));
+      else if (name === "fav") kbdFocus($("favGrid").querySelector(".card[data-k]") || $("favManage"));
+      else if (name === "hist") kbdFocus($("histGrid").querySelector(".card[data-k]") || $("navFav"));
+    }
+
+
+    /* ---------- shared management mode: 继续观看 (cw) / 收藏 (fav) ----------
+       entry: '管理' button, touch long-press (~500 ms), long OK on the remote (>= 600 ms), MENU key.
+       继续观看 entries are only hidden here (the bridge cannot delete app history); watching again brings them back. */
+    var MG = { kind: "", from: "", sel: {}, items: [] };
+    var MG_CFG = {
+      cw: { title: "管理继续观看", what: "观看记录", empty: "继续观看已清空", list: function () { return cwList(); }, del: function (ids) { cwForget(ids); } },
+      fav: { title: "管理收藏", what: "收藏", empty: "收藏已清空", list: function () { return FAV.slice(); }, del: function (ids) { favRemove(ids); } }
+    };
+    function mid(v) { return String(v.hk || v.id); }
+    function openManage(kind, preId) {
+      MG.kind = kind; MG.from = page === "fav" || page === "hist" ? page : ""; MG.sel = {};
+      if (preId) MG.sel[preId] = 1;
+      $("mgTitle").textContent = MG_CFG[kind].title;
+      openPage("mg");
+      mgRender(preId);
+    }
+    function mgRender(focusId) {
+      MG.items = MG_CFG[MG.kind].list();
+      var h = "", ids = {};
+      for (var i = 0; i < MG.items.length; i += 1) {
+        var v = MG.items[i], id = mid(v);
+        ids[id] = 1;
+        h += '<div class="card mitem"><button type="button" class="mcard' + (MG.sel[id] ? " on" : "") + '" data-mid="' + esc(id) + '" aria-label="' + esc(v.name) + '">' +
+          '<span class="poster"><span class="ph">' + esc(v.name) + '</span><img alt="" data-src="' + esc(v.hk ? v.pic : dPoster(v.pic, "s")) + '"><span class="mchk">' + (MG.sel[id] ? "&#10003;" : "") + "</span></span>" +
+          '<span class="mname">' + esc(v.name) + '</span></button><button type="button" class="mx" data-mx="' + esc(id) + '" aria-label="删除">&#10005;</button></div>';
+      }
+      for (var k in MG.sel) if (!ids[k]) delete MG.sel[k];
+      $("mgGrid").innerHTML = h;
+      mgTools();
+      var f = null;
+      if (focusId) { var all = $("mgGrid").querySelectorAll(".mcard"); for (var q = 0; q < all.length; q += 1) if (all[q].getAttribute("data-mid") === String(focusId)) f = all[q]; }
+      kbdFocus(f || $("mgGrid").querySelector(".mcard") || $("mgDone"));
+      schedulePump();
+    }
+    function mgTools() {
+      var n = 0, tot = MG.items.length;
+      for (var k in MG.sel) n += 1;
+      $("mgDel").textContent = "删除所选" + (n ? "（" + n + "）" : "");
+      $("mgAll").textContent = tot && n === tot ? "取消全选" : "全选";
+      $("mgNote").textContent = tot ? "共 " + tot + " 部 · 点卡片选择，点 ✕ 直接删除" + (MG.kind === "cw" ? " · 只从本页隐藏，App 内的观看记录不受影响" : "") : MG_CFG[MG.kind].empty;
+    }
+    function mgToggle(btn) {
+      var id = btn.getAttribute("data-mid");
+      if (MG.sel[id]) delete MG.sel[id]; else MG.sel[id] = 1;
+      btn.className = "mcard" + (MG.sel[id] ? " on" : "");
+      btn.querySelector(".mchk").innerHTML = MG.sel[id] ? "&#10003;" : "";
+      mgTools();
+    }
+    function mgDelete(ids, focusNext) {
+      if (!ids.length) return;
+      MG_CFG[MG.kind].del(ids);
+      for (var i = 0; i < ids.length; i += 1) delete MG.sel[ids[i]];
+      toast("已删除 " + ids.length + " 部" + MG_CFG[MG.kind].what, 1600);
+      mgRender(focusNext);
+    }
+    function mgClose() {
+      if (navTop() === "mg") { navGo(1); return; }
+      if (MG.from) { openPage(MG.from); pageFocus(MG.from); }
+      else { exitPage(); kbdFocus(cw.track.querySelector(".card[data-k]") || $("heroPlay")); }
+    }
+    var cfmYes = null, cfmLast = null;
+    function confirmBox(text, onYes) {
+      cfmYes = onYes; cfmLast = document.activeElement;
+      $("cfmText").textContent = text;
+      $("cfm").hidden = false;
+      navPush("confirm");
+      focusEl($("cfmNo"));
+    }
+    function cfmClose(ok, fromPop) {
+      if ($("cfm").hidden) return;
+      $("cfm").hidden = true;
+      if (!fromPop) navBack("confirm");
+      var f = cfmYes; cfmYes = null;
+      if (ok && f) f();
+      else if (cfmLast && document.body.contains(cfmLast)) focusEl(cfmLast);
+    }
+    function mgKindOf(el) {
+      if (!el || !el.getAttribute || !el.getAttribute("data-k")) return "";
+      if (el.className.indexOf("card-cw") >= 0) return "cw";
+      if ($("favGrid").contains(el) || (favRow && favRow.el.contains(el))) return "fav";
+      return "";
+    }
+    var lp = { t: 0, x: 0, y: 0, el: null, fired: 0 };
+    document.addEventListener("touchstart", function (e) {
+      var c = e.target.closest ? e.target.closest(".card[data-k], .dp-rec") : null;
+      clearTimeout(lp.t); lp.el = null;
+      if (!c || !e.touches || e.touches.length !== 1) return;
+      lp.el = c; lp.x = e.touches[0].clientX; lp.y = e.touches[0].clientY;
+      lp.t = setTimeout(function () { lp.fired = Date.now(); cardActions(c); }, 500);
+    }, { passive: true });
+    document.addEventListener("touchmove", function (e) {
+      if (lp.el && e.touches && (Math.abs(e.touches[0].clientX - lp.x) > 10 || Math.abs(e.touches[0].clientY - lp.y) > 10)) { clearTimeout(lp.t); lp.el = null; }
+    }, { passive: true });
+    document.addEventListener("touchend", function () { clearTimeout(lp.t); lp.el = null; }, { passive: true });
+    document.addEventListener("contextmenu", function (e) {
+      var c = e.target.closest ? e.target.closest(".card[data-k], .dp-rec") : null;
+      if (!c) return;
+      e.preventDefault();
+      if (!lp.fired || Date.now() - lp.fired > 1500) { clearTimeout(lp.t); lp.fired = Date.now(); cardActions(c); }
+    });
+    /* ---------- continue watching (fm.history: all sites of this config, newest first) ---------- */
+    var CW = [];
+    function cwList() {
+      var out = [];
+      for (var i = 0; i < CW.length; i += 1) { var v = CW[i]; if (CWH[v.hk] && CWH[v.hk] >= v.ct) continue; out.push(v); }
+      return out;
+    }
+    function cwForget(ids) {
+      for (var i = 0; i < ids.length; i += 1) { var h = HIST[ids[i]]; CWH[ids[i]] = h ? Number(h.createTime) || Date.now() : Date.now(); }
+      kvSet(CWH_KEY, JSON.stringify(CWH));
+      renderCw(); placeHeart();
+    }
+    function refreshHistory() {
+      if (!window.fm || typeof fm.history !== "function") return;
+      picLoad().then(function () {
+        return Promise.resolve(fm.history());
+      }).then(function (list) {
+        list = list instanceof Array ? list : [];
+        list.sort(function (a, b) { return (b.createTime || 0) - (a.createTime || 0); });
+        var out = [], map = {}, byName = {}, picDirty = false;
+        for (var i = 0; i < list.length; i += 1) {
+          var h = list[i], key = String(h.key || "");
+          if (!key || map[key]) continue;
+          map[key] = h;
+          var nn = normName(h.vodName);
+          if (nn && !byName[nn]) byName[nn] = h;
+          if (nn && h.vodPic && (!PIC[nn] || !PIC[nn].p)) { PIC[nn] = { p: h.vodPic, w: PIC[nn] && PIC[nn].w || "", t: Number(h.createTime) || Date.now() }; picDirty = true; }
+          if (out.length >= 100) continue;
+          var pos = Number(h.position), dur = Number(h.duration), p = 0;
+          if (pos > 0 && dur > 0) p = Math.min(1, Math.max(0.02, pos / dur));
+          out.push({
+            hk: key, id: key, name: clean(h.vodName) || "未命名", pic: h.vodPic || picGet(h.vodName), ct: Number(h.createTime) || 0,
+            remarks: h.vodRemarks ? "看到 " + clean(h.vodRemarks) : "",
+            sub: pos > 0 && dur > 0 ? fmtTime(pos) + " / " + fmtTime(dur) : "",
+            p: p.toFixed(3)
+          });
+        }
+        HIST = map; HIST_N = byName; CW = out;
+        if (picDirty) picSaveSoon();
+        renderCw(); placeHeart(); markAll(); heroResume();
+        if (modalItem) sheetState(modalItem);
+      }).catch(function () {});
+    }
+    function renderCw() { fillRow(cw, cwList().slice(0, 20), null, false); histUI(); }
+    function ago(t) {
+      var d = (Date.now() - t) / 1000;
+      if (!(t > 0)) return "";
+      if (d < 90) return "刚刚";
+      if (d < 3600) return Math.round(d / 60) + "分钟前";
+      if (d < 86400) return Math.round(d / 3600) + "小时前";
+      if (d < 86400 * 30) return Math.round(d / 86400) + "天前";
+      var x = new Date(t); return (x.getMonth() + 1) + "月" + x.getDate() + "日";
+    }
+    function histUI() {   // 最近看过: the app's own local history (fm.history), newest first; OK resumes via fm.vod
+      var g = $("histGrid");
+      if (!g || page !== "hist") return;
+      if (!(window.fm && typeof fm.history === "function")) {
+        g.innerHTML = ""; $("histManage").hidden = true;
+        $("histNote").textContent = "最近看过读取的是 App 在本机的观看记录：请在 webhtv App 中打开本页。";
+        return;
+      }
+      var l = cwList(), h = "", sig = "";
+      for (var q = 0; q < l.length; q += 1) sig += l[q].hk + "|" + l[q].remarks + "|" + l[q].p + ";";
+      if (g._sig === sig && g.firstChild) return;
+      g._sig = sig;
+      for (var i = 0; i < l.length; i += 1) h += cardHTML(l[i], { cap2: [String(l[i].remarks || "").replace(/^看到 /, ""), ago(l[i].ct)].filter(function (x) { return x; }).join(" · ") });
+      var a = document.activeElement, fid = a && g.contains(a) && itemOf(a) ? mid(itemOf(a)) : null;
+      g.innerHTML = h;
+      if (fid) { var cs = g.querySelectorAll(".card[data-k]"); for (var c = 0; c < cs.length; c += 1) if (mid(ITEMS[Number(cs[c].getAttribute("data-k"))]) === fid) { focusEl(cs[c]); break; } }
+      $("histManage").hidden = !l.length;
+      $("histNote").textContent = l.length ? "共 " + l.length + " 部 · 本机观看记录（只读本机，不上传）· 确定 = 继续播放 · 长按确定 = 隐藏" : "还没有观看记录";
+      schedulePump();
+    }
+
+    /* ---------- D-pad / keyboard focus engine ---------- */
+    function visible(el) { return !!(el && el.offsetParent !== null); }
+    function navRows() {
+      var rows = [];
+      if (!$("cfm").hidden) return [[$("cfmNo"), $("cfmYes")]];
+      if (!$("qa").hidden) {
+        var qb = $("qaBtns").querySelectorAll(".btn"), qr = [];
+        for (var qi = 0; qi < qb.length; qi += 1) qr.push([qb[qi]]);
+        return qr;
+      }
+      if (modalItem) {   // back · buttons (primary first) · 更多 · cast · 相关推荐 · 详细信息
+        var bs = [], bb = $("sheetBtns").querySelectorAll(".btn");
+        for (var b = 0; b < bb.length; b += 1) if (!bb[b].hidden) bs.push(bb[b]);
+        var mr = [[$("sheetX")], bs];
+        if (!$("dpMore").hidden) mr.push([$("dpMore")]);
+        if (!$("dpCastSec").hidden) { var dc = $("dpCast").querySelectorAll(".dp-cast"); if (dc.length) mr.push(Array.prototype.slice.call(dc)); }
+        if (!$("dpRecSec").hidden) { var dr = $("dpRecs").querySelectorAll(".dp-rec"); if (dr.length) mr.push(Array.prototype.slice.call(dr)); }
+        if (!$("dpInfoSec").hidden) mr.push([$("dpInfoSec")]);
+        return mr;
+      }
+      var top = [];
+      // top row order follows the visual layout: search (left) … nav (center)
+      top.push($("sbtn"));
+      if (searchOpen()) top.push($("sinput"));
+      var nb = document.querySelectorAll("#nav button");
+      for (var i = 0; i < nb.length; i += 1) if (visible(nb[i])) top.push(nb[i]);
+      rows.push(top);
+      if (page === "mg") {
+        rows.push(Array.prototype.slice.call(document.querySelectorAll("#mgTools .chip")));
+        var its = $("mgGrid").querySelectorAll(".mitem"), cr = null, lt = -1;
+        for (var m = 0; m < its.length; m += 1) {
+          if (its[m].offsetTop !== lt) { cr = []; rows.push(cr); lt = its[m].offsetTop; }
+          cr.push(its[m].querySelector(".mcard"), its[m].querySelector(".mx"));
+        }
+        return rows;
+      }
+      if (searchMode || page) {
+        if (CATS[page]) {
+          var gs = $("catChips").querySelectorAll(".chips");
+          for (var q = 0; q < gs.length; q += 1) rows.push(Array.prototype.slice.call(gs[q].querySelectorAll(".chip")));
+        } else if (page === "fav" || page === "hist") {
+          var tr = [], tabs = $("favTabs").querySelectorAll(".chip");
+          for (var q0 = 0; q0 < tabs.length; q0 += 1) tr.push(tabs[q0]);
+          rows.push(tr);
+          var tr3 = [], tools = $("favTools").querySelectorAll(".chip");
+          for (var q2 = 0; q2 < tools.length; q2 += 1) if (!tools[q2].hidden) tr3.push(tools[q2]);
+          if (tr3.length) rows.push(tr3);
+        }
+        else if (searchMode) rows.push([$("resApp")]);
+        var grid = CATS[page] ? "catGrid" : page === "fav" ? "favGrid" : page === "hist" ? "histGrid" : "resGrid";
+        var cards = $(grid).querySelectorAll(".card[data-k]"), cur = null, lastTop = -1;
+        for (var j = 0; j < cards.length; j += 1) {
+          var t = cards[j].offsetTop;
+          if (t !== lastTop) { cur = []; rows.push(cur); lastTop = t; }
+          cur.push(cards[j]);
+        }
+        return rows;
+      }
+      var hrow = [$("heroPlay"), $("heroInfo")];
+      var hcs = $("heroCredits").querySelectorAll(".hcast");
+      for (var hi = 0; hi < hcs.length; hi += 1) hrow.push(hcs[hi]);
+      rows.push(hrow);
+      for (var r = 0; r < ROW_ORDER.length; r += 1) {
+        var row = ROWS[ROW_ORDER[r]];
+        if (row.el.hidden) continue;
+        var tr2 = [];
+        if (row.el.contains($("homeFav")) && !$("homeFav").hidden) {
+          tr2.push($("homeFav"));
+          if ($("homeHist") && !$("homeHist").hidden) tr2.push($("homeHist"));
+        }
+        if (row.id === "cw" && $("cwManage")) tr2.push($("cwManage"));
+        if (row.id === "fav" && $("favAll")) tr2.push($("favAll"));
+        if (tr2.length) rows.push(tr2);
+        var cs = row.track.querySelectorAll(".card[data-k]");
+        if (cs.length) rows.push(Array.prototype.slice.call(cs));
+      }
+      return rows;
+    }
+    function topbarH() { return $("topbar").offsetHeight || 56; }
+    var MEMSEL = ".row-scroll, .dp-scroll, .dp-btns, .topbar, .chips, .hero-btns, .hero-credits";
+    function focusEl(el) {
+      if (!el) return;
+      // island visibility: focus on the nav brings it back; TV focus deep in content keeps it tucked away
+      if (el.closest && el.closest(".topbar")) topbarShow();
+      else if (isTV() && (window.pageYOffset || 0) > 60) topbarHideNow();
+      // reads first (layout is clean here), then writes: no forced layout between focus() and scrolling
+      var sc = el.closest ? el.closest(".row-scroll, .dp-scroll, .chips") : null, hs = null, vy = null, inModal = false;
+      if (sc) {
+        var cw2 = sc.clientWidth;
+        if (sc.scrollWidth > cw2 + 2) {
+          var pad = cw2 * (sc.className.indexOf("dp-scroll") >= 0 ? 0.06 : (isTV() ? 0.055 : 0.04)) + 6, left = el.offsetLeft, right = left + el.offsetWidth, sl = sc.scrollLeft;
+          if (left - pad < sl) hs = Math.max(0, left - pad);
+          else if (right + pad > sl + cw2) hs = right + pad - cw2;
+        }
+      }
+      var qb = el.closest ? el.closest(".qa-box") : null, qh = null;   // quick-actions panel may scroll vertically
+      if (qb && qb.scrollHeight > qb.clientHeight + 2) {
+        var er = el.getBoundingClientRect(), br2 = qb.getBoundingClientRect();
+        if (er.top < br2.top + 4) qh = qb.scrollTop - (br2.top + 4 - er.top);
+        else if (er.bottom > br2.bottom - 4) qh = qb.scrollTop + (er.bottom - br2.bottom + 4);
+      }
+      if (modalItem) inModal = !!(el.closest && el.closest("#modal"));
+      else if (el.closest && el.closest(".hero")) { if ((window.pageYOffset || 0) !== 0) vy = 0; }
+      else if (!(el.closest && el.closest(".topbar"))) {
+        var box = el.closest ? el.closest(".row") : null;
+        var r = (box || el).getBoundingClientRect(), th = topbarH(), vh = window.innerHeight || 800;
+        if (r.top < th + 4 || r.bottom > vh - 8) vy = Math.max(0, (window.pageYOffset || 0) + r.top - th - (isTV() ? vh * 0.06 : 8));
+      }
+      try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+      var key = el.closest ? el.closest(MEMSEL) : null;
+      if (key) key._wexMem = el;   // per-row focus memory (used when coming back up/down)
+      if (hs !== null) sc.scrollLeft = hs;
+      if (qh !== null) qb.scrollTop = Math.max(0, qh);
+      if (inModal) dpScrollTo(el);
+      else if (vy !== null) window.scrollTo(0, vy);
+      schedulePump();
+    }
+    function dpScrollTo(el) {   // keep the focused element of the detail page in view (vertical scroller = #modal)
+      var m = $("modal"), vh = m.clientHeight || window.innerHeight || 800, pad = isTV() ? vh * 0.1 : 72;
+      if (el === $("sheetX")) { m.scrollTop = 0; return; }
+      var sec = el.closest(".dp-sec"), box = sec || el, r = box.getBoundingClientRect(), abs = m.scrollTop + r.top;
+      if (!sec && abs + r.height < vh - 24) { m.scrollTop = 0; return; }   // header elements: show the whole header when it fits
+      if (r.top < pad || r.bottom > vh - 16) m.scrollTop = Math.max(0, abs - pad);
+    }
+    function centerX(el) { var r = el.getBoundingClientRect(); return r.left + r.width / 2; }
+    function rowsInfo() {
+      var rows = navRows(), a = document.activeElement, ri = -1;
+      for (var i = 0; i < rows.length && ri < 0; i += 1) if (rows[i].indexOf(a) >= 0) ri = i;
+      return { rows: rows, ri: ri, a: a };
+    }
+    function isCardEl(el) { return !!(el && el.getAttribute && (el.getAttribute("data-k") !== null || el.getAttribute("data-ri") !== null)); }
+    function itemOf(el) {
+      if (!el || !el.getAttribute) return null;
+      var k = el.getAttribute("data-k");
+      if (k !== null) return ITEMS[Number(k)] || null;
+      var ri = el.getAttribute("data-ri");
+      if (ri !== null && modalItem && modalItem.recs) return modalItem.recs[Number(ri)] || null;
+      return null;
+    }
+    function rowHasCards(r) { return !!(r && r[0] && (isCardEl(r[0]) || /\b(dp-cast|mcard)\b/.test(r[0].className || ""))); }
+    function enterRow(rows, t, from) {   // vertical move into row t: remembered element > selected chip > nearest by x
+      var row = rows[t], key = row[0] && row[0].closest ? row[0].closest(MEMSEL) : null, best = null;
+      if (key && key._wexMem && row.indexOf(key._wexMem) >= 0) best = key._wexMem;
+      if (!best && key && /\bchips\b/.test(key.className || "")) { var on = key.querySelector(".chip.on"); if (on && row.indexOf(on) >= 0) best = on; }
+      if (!best) {
+        var x = from && from !== document.body && from.getBoundingClientRect ? centerX(from) : 0, bd = 1e9;
+        best = row[0];
+        for (var k = 0; k < row.length; k += 1) { var d = Math.abs(centerX(row[k]) - x); if (d < bd) { bd = d; best = row[k]; } }
+      }
+      focusEl(best);
+    }
+    function focusDefault() {   // sensible default focus for the current level
+      if (!$("cfm").hidden) { focusEl($("cfmNo")); return; }
+      if (!$("qa").hidden) { focusEl($("qaBtns").querySelector(".btn")); return; }
+      if (modalItem) { focusEl(dpDefault()); return; }
+      if (page === "mg") { focusEl($("mgGrid").querySelector(".mcard") || $("mgDone")); return; }
+      if (CATS[page]) { focusEl(document.querySelector("#catChips .chip.on") || $("catGrid").querySelector(".card[data-k]")); return; }
+      if (page === "fav") { focusEl($("favGrid").querySelector(".card[data-k]") || $("favManage")); return; }
+      if (page === "hist") { focusEl($("histGrid").querySelector(".card[data-k]") || $("navFav")); return; }
+      if (searchMode) { focusEl($("resApp")); return; }
+      focusEl($("heroPlay"));
+    }
+    function moveFocus(dir) {
+      var o = rowsInfo(), rows = o.rows, ri = o.ri, a = o.a;
+      if (ri < 0) { focusDefault(); return; }
+      var ci = rows[ri].indexOf(a);
+      if (dir === "left" || dir === "right") {
+        var n = ci + (dir === "right" ? 1 : -1);
+        if (n >= 0 && n < rows[ri].length) {
+          focusEl(rows[ri][n]);
+          var sc = rows[ri][n].closest ? rows[ri][n].closest(".row") : null;
+          if (sc && dir === "right" && n >= rows[ri].length - 5) {
+            var row = ROWS[sc.getAttribute("data-row")];
+            if (row && row.more) row.more();
+          }
+        }
+        return;
+      }
+      var ni = ri + (dir === "down" ? 1 : -1);
+      if (CATS[page] && dir === "down" && ni >= rows.length - 3) catMore();
+      if (searchMode && dir === "down" && ni >= rows.length - 3) srMore();
+      if (ni < 0 || ni >= rows.length) return;
+      enterRow(rows, ni, a);
+    }
+    function jump(n) {   // PageUp/PageDown, CH+/CH-: grids move one screen of rows, home/detail move to the next card row
+      var o = rowsInfo(), rows = o.rows, t = o.ri;
+      if (t < 0) { focusDefault(); return; }
+      var g = rows[t][0] && rows[t][0].closest ? rows[t][0].closest(".grid") : null;
+      if (g) {
+        var h = rows[t][0].offsetHeight || 200, per = Math.max(1, Math.floor(((window.innerHeight || 800) - topbarH()) / (h + 16)));
+        t += n * per;
+      } else {
+        do { t += n; } while (t >= 0 && t < rows.length && !rowHasCards(rows[t]));
+      }
+      if (n > 0 && t >= rows.length - 3) { if (CATS[page]) catMore(); else if (searchMode) srMore(); }
+      t = Math.max(0, Math.min(rows.length - 1, t));
+      if (t !== o.ri) enterRow(rows, t, o.a);
+      else if (modalItem && n > 0) { $("modal").scrollTop = $("modal").scrollHeight; }
+    }
+    function digitJump(d) {   // number keys on the home page: 0 = top, 1-9 = n-th row
+      var rows = navRows(), cr = [];
+      for (var i = 0; i < rows.length; i += 1) if (rowHasCards(rows[i])) cr.push(i);
+      if (d === 0) { window.scrollTo(0, 0); focusEl($("heroPlay")); return; }
+      if (cr[d - 1] != null) enterRow(rows, cr[d - 1], document.activeElement);
+    }
+    function setKbd(on) {
+      var has = root.className.indexOf(" kbd") >= 0;
+      if (on && !has) root.className += " kbd";
+      else if (!on && has) root.className = root.className.replace(" kbd", "");
+    }
+    document.addEventListener("mousedown", function () { setKbd(false); }, true);
+    document.addEventListener("touchstart", function () { setKbd(false); }, true);
+
+    /* ---------- remote / keyboard keymap ----------
+       arrows: spatial focus · OK (13/23/66): activate, hold >= 600 ms on a card: management (继续观看/收藏) or quick actions
+       BACK (Esc 27 / 4 / Backspace 8 outside text / 461 / 10009; Android back = history): one level back
+       MENU (82 / ContextMenu): management / quick actions · PLAY-PAUSE (85/126/127/179): 搜索播放 for the focused card / detail
+       PAGE (33/34, 92/93, CH 166/167): jump a row (home, detail) or a screen (grids) · 0-9 on home: jump to row */
+    var okp = { el: null, t0: 0, fired: false, timer: 0 };
+    function isOkKey(k) { return k === 13 || k === 23 || k === 66; }
+    function cardActions(el) {
+      var kind = mgKindOf(el), v = itemOf(el);
+      if (!v) return false;
+      if (kind) openManage(kind, mid(v)); else qaOpen(v, el, false);
+      return true;
+    }
+    function okLong() {
+      if (!okp.el || okp.fired) return;
+      okp.fired = true;
+      cardActions(okp.el);
+    }
+    document.addEventListener("keydown", function (e) {
+      var k = e.keyCode;
+      if (!isOkKey(k)) return;
+      var a = document.activeElement;
+      if (a && a.tagName === "INPUT") {
+        if (k === 66) { e.preventDefault(); clearTimeout(sTimer); doSearch(a.value); kbdFocus($("resApp")); }
+        return;   // 13 handled by the input's own listener, 23 opens the on-screen keyboard
+      }
+      if (k !== 13 || isTV()) setKbd(true);
+      if (!a || a === document.body || a === document.documentElement) { e.preventDefault(); if (!e.repeat) focusDefault(); return; }
+      if (isCardEl(a)) {
+        e.preventDefault(); e.stopPropagation();
+        if (okp.el !== a) { okp.el = a; okp.t0 = Date.now(); okp.fired = false; clearTimeout(okp.timer); okp.timer = setTimeout(okLong, 600); }
+        else if (e.repeat && Date.now() - okp.t0 >= 600) okLong();
+        return;
+      }
+      if (k !== 13) { e.preventDefault(); e.stopPropagation(); if (!e.repeat && typeof a.click === "function") a.click(); }
+    }, true);
+    document.addEventListener("keyup", function (e) {
+      if (!isOkKey(e.keyCode)) return;
+      var el = okp.el, fired = okp.fired;
+      clearTimeout(okp.timer); okp.el = null; okp.fired = false;
+      if (el && !fired && document.activeElement === el) { e.preventDefault(); el.click(); }
+    }, true);
+    function goBack() {
+      if (!$("qa").hidden) { qaClose(); return true; }
+      if (!$("cfm").hidden) { cfmClose(false); return true; }
+      if (page === "mg") { mgClose(); return true; }
+      if (modalItem) { closeInfo(); return true; }
+      if (searchMode || searchOpen()) { exitSearch(); kbdFocus($("sbtn")); return true; }
+      if (page) { exitPage(); return true; }
+      if ((window.pageYOffset || 0) > 4 || document.activeElement !== $("heroPlay")) {
+        window.scrollTo(0, 0);
+        // URL decides (works even after a WebView restore lost the JS flag):
+        // pop the sc marker and let popstate do the top/scroll/focus — same logic as a level back.
+        if (/(\?|&)sc=1(&|$)/.test(location.search)) {
+          try { history.back(); } catch (e) { focusEl($("heroPlay")); }
+        } else {
+          focusEl($("heroPlay"));
+        }
+        return true;
+      }
+      return false;
+    }
+    function menuKey(a) {
+      if (!$("qa").hidden) { qaClose(); return; }
+      if (!$("cfm").hidden) return;
+      if (isCardEl(a) && cardActions(a)) return;
+      if (modalItem) { qaOpen(modalItem, a, true); return; }
+      if (page === "fav" && FAV.length) { openManage("fav"); return; }
+      if (page === "hist" && cwList().length) { openManage("cw"); return; }
+      if (!page && !searchMode && !cw.el.hidden) { openManage("cw"); return; }
+      toast("选中一张海报后按菜单键：快捷操作 / 管理", 1800);
+    }
+    function mediaPlay(a) {
+      if (!$("qa").hidden || !$("cfm").hidden) return;
+      var v = isCardEl(a) ? itemOf(a) : null;
+      if (v) { if (v.hk) play(v); else appSearch(v.name, v); return; }
+      if (modalItem) { appSearch(modalItem.name, modalItem); return; }
+      if (!page && !searchMode && featured) { appSearch(featured.name, featured); return; }
+      if (searchMode && lastKw) appSearch(lastKw);
+    }
+    document.addEventListener("keydown", function (e) {
+      var k = e.keyCode, key = e.key || "", a = document.activeElement, inInput = !!(a && a.tagName === "INPUT");
+      lastKeyAt = Date.now();
+      if (isOkKey(k)) return;
+      setKbd(true);
+      var dir = k === 37 ? "left" : k === 38 ? "up" : k === 39 ? "right" : k === 40 ? "down" : "";
+      if (dir) {
+        if (inInput && (dir === "left" || dir === "right")) return;   // caret stays in the text
+        e.preventDefault();
+        var now = Date.now();
+        if (e.repeat && now - lastMoveAt < (isTV() ? 110 : 55)) return;   // held key: cap the move rate on slow TV SoCs
+        lastMoveAt = now;
+        moveFocus(dir);
+        return;
+      }
+      if (k === 27 || k === 4 || k === 461 || k === 10009 || key === "GoBack" || (k === 8 && !inInput)) {
+        if (goBack()) e.preventDefault();
+        return;
+      }
+      if (inInput) return;
+      if (k === 82 || key === "ContextMenu" || key === "Menu") { e.preventDefault(); menuKey(a); return; }
+      if (k === 85 || k === 126 || k === 127 || k === 179 || key === "MediaPlayPause" || key === "MediaPlay") { e.preventDefault(); mediaPlay(a); return; }
+      if (k === 33 || k === 92 || (k === 166 && key !== "BrowserBack")) { e.preventDefault(); jump(-1); return; }
+      if (k === 34 || k === 93 || (k === 167 && key !== "BrowserForward")) { e.preventDefault(); jump(1); return; }
+      var dg = k >= 48 && k <= 57 ? k - 48 : (k >= 96 && k <= 105 ? k - 96 : -1);
+      if (dg >= 0 && !e.ctrlKey && !e.metaKey && !e.altKey && !modalItem && !page && !searchMode && $("qa").hidden && $("cfm").hidden) { e.preventDefault(); digitJump(dg); }
+    });
+
+
+    /* ---------- wiring ---------- */
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      var card = t.closest ? t.closest(".card[data-k]") : null;
+      if (lp.fired && Date.now() - lp.fired < 800) { e.preventDefault(); return; }
+      var rc = t.closest ? t.closest(".dp-rec") : null;
+      if (rc) { openInfo(itemOf(rc)); return; }
+      var cc = t.closest ? t.closest(".dp-cast") : null;
+      if (cc) { var cx = modalItem && modalItem.credits ? modalItem.credits.cast[Number(cc.getAttribute("data-ci"))] : null; if (cx) appSearch(cx.n); return; }
+      var hc = t.closest ? t.closest(".hcast") : null;
+      if (hc) { appSearch(hc.getAttribute("data-kw") || ""); return; }
+      if (t.closest && t.closest("#dpMore")) { dpToggleMore(); return; }
+      var ft = t.closest ? t.closest("[data-ft]") : null;
+      if (ft) { var ftid = ft.getAttribute("data-ft"); if (ftid && ftid !== page) { openPage(ftid); pageFocus(ftid); } return; }
+      var qb = t.closest ? t.closest("[data-qa]") : null;
+      if (qb) { qaDo(qb.getAttribute("data-qa")); return; }
+      if (t === $("qa")) { qaClose(); return; }
+      if (card) {
+        var cv = ITEMS[Number(card.getAttribute("data-k"))];
+        if (cv && cv.hk) play(cv); else openInfo(cv);
+        return;
+      }
+      if (t.closest && t.closest("#cwManage")) { openManage("cw"); return; }
+      if (t.closest && t.closest("#histManage")) { if (cwList().length) openManage("cw"); return; }
+      if (t.closest && t.closest("#favManage")) { if (FAV.length) openManage("fav"); else toast("还没有收藏", 1600); return; }
+      if (t.closest && t.closest("#cfmNo")) { cfmClose(false); return; }
+      if (t.closest && t.closest("#cfmYes")) { cfmClose(true); return; }
+      if (t === $("cfm")) { cfmClose(false); return; }
+      var mc = t.closest ? t.closest(".mcard") : null;
+      if (mc) { mgToggle(mc); return; }
+      var mx = t.closest ? t.closest(".mx") : null;
+      if (mx) {
+        var nx = mx.parentNode.nextElementSibling || mx.parentNode.previousElementSibling, nid = nx ? nx.querySelector(".mcard").getAttribute("data-mid") : "";
+        mgDelete([mx.getAttribute("data-mx")], nid);
+        return;
+      }
+      if (t.closest && t.closest("#mgAll")) {
+        var all = MG.items.length && Object.keys(MG.sel).length === MG.items.length;
+        MG.sel = {};
+        if (!all) for (var q2 = 0; q2 < MG.items.length; q2 += 1) MG.sel[mid(MG.items[q2])] = 1;
+        mgRender(); kbdFocus($("mgAll"));
+        return;
+      }
+      if (t.closest && t.closest("#mgDel")) {
+        var ids = Object.keys(MG.sel);
+        if (!ids.length) { toast("先点卡片选择要删除的项", 1600); return; }
+        confirmBox("删除所选 " + ids.length + " 部的" + MG_CFG[MG.kind].what + "？", function () { mgDelete(ids); kbdFocus($("mgDone")); });
+        return;
+      }
+      if (t.closest && t.closest("#mgDone")) { mgClose(); return; }
+      if (t.closest && t.closest("#favKeepBtn")) { try { Promise.resolve(fm.openKeep()).catch(function () {}); } catch (x) {} return; }
+      if (t.closest && t.closest("#resApp")) { appSearch(lastKw); return; }
+      var chip = t.closest ? t.closest("[data-ck]") : null;
+      if (chip) {
+        var ck = chip.getAttribute("data-ck"), cvv = chip.getAttribute("data-cv");
+        if (CAT.sel[ck] !== cvv) {
+          var ns = {}; for (var sk in CAT.sel) ns[sk] = CAT.sel[sk];
+          ns[ck] = cvv; CAT.sel = ns; CAT["sel_" + CAT.name] = ns;
+          var sib = chip.parentNode.querySelectorAll(".chip");
+          for (var si = 0; si < sib.length; si += 1) sib[si].className = sib[si] === chip ? "chip on" : "chip";
+          catReset();
+        }
+        focusEl(chip);
+        return;
+      }
+      var go = t.closest ? t.closest("[data-go]") : null;
+      if (go) {
+        var id = go.getAttribute("data-go");
+        if (CATS[id] || id === "fav" || id === "hist") { openPage(id); pageFocus(id); return; }
+        if (page) exitPage();
+        if (searchMode || searchOpen()) exitSearch();
+        navHighlight();
+        window.scrollTo(0, 0);
+        RET_SKIP = Date.now();
+        focusEl($("heroPlay"));
+        return;
+      }
+    });
+    $("heroPlay").addEventListener("click", function () { play(featured); });
+    $("heroInfo").addEventListener("click", function () { openInfo(featured); });
+    $("sheetPlay").addEventListener("click", function () { if (modalItem) appSearch(modalItem.name, modalItem); });
+    $("sheetResume").addEventListener("click", function () { if (modalItem && !resumeHist(histOf(modalItem))) toast("没有找到这部影片的 App 观看记录"); });
+    $("sheetAlt").addEventListener("click", function () { if (modalItem) appSearch(baseTitle(modalItem.name), modalItem); });
+    $("sheetFav").addEventListener("click", function () { favToggle(modalItem); });
+    $("sheetDone").addEventListener("click", function () { toggleDone(modalItem); });
+    $("sheetX").addEventListener("click", function () { closeInfo(); });
+    $("sbtn").addEventListener("click", function () {
+      var v = $("sinput").value;
+      if (searchOpen() && v) doSearch(v);
+      else if (searchOpen() && !searchMode) exitSearch();
+      else openSearch();
+    });
+    $("sinput").addEventListener("keydown", function (e) {
+      if (e.keyCode === 13) {
+        e.preventDefault(); clearTimeout(sTimer); doSearch(this.value);
+        if (isTV() || root.className.indexOf(" kbd") >= 0) focusEl($("resApp")); else { try { this.blur(); } catch (x) {} }
+      }
+    });
+    $("sinput").addEventListener("input", function () {
+      var v = this.value;
+      clearTimeout(sTimer);
+      if (isTV()) return;
+      sTimer = setTimeout(function () { if (clean(v).length >= 1) doSearch(v); }, 700);
+    });
+    $("sinput").addEventListener("focus", function () {
+      if (!searchOpen()) { $("search").className = "search open"; this.tabIndex = 0; }
+      searchLevel();
+    });
+    $("sinput").addEventListener("blur", function () {
+      var self = this;
+      setTimeout(function () { if (!self.value && !searchMode && document.activeElement !== self) exitSearch(); }, 150);
+    });
+    window.addEventListener("popstate", function (e) {
+      navPending = 0;
+      markLock = Date.now();   // suppress marker pushes while the browser is restoring scroll
+      // landing on (or coming back through) the marker entry re-arms the top-on-back behaviour
+      if (/(\?|&)sc=1(&|$)/.test(location.search)) markPushed = true;
+      var tag = e && e.state && e.state.wx ? String(e.state.wx) : "";
+      if (tag !== "qa") qaClose(true);
+      if (tag === "qa" && $("qa").hidden) { navGo(1); return; }
+      if (modalItem && tag === "detail" && DSTACK.length && navDepth() < DLV) { dpPop(); RETS.length = Math.min(RETS.length, navDepth()); navHighlight(); return; }
+      if (tag !== "confirm") cfmClose(false, true);
+      if (modalItem && tag !== "detail") closeInfo(true);
+      if (tag !== "search" && (searchMode || searchOpen())) exitSearch(true);
+      if (tag === "search" && !searchMode && !searchOpen()) { navGo(1); return; }   // stale search entry: skip it
+      if (tag === "detail" && !modalItem) { navGo(1); return; }                     // stale detail entry (forward nav)
+      if (tag === "mg" && !MG.kind) { navGo(1); return; }
+      if (PAGE_EL[tag]) {
+        if (page !== tag) { showPage(tag); if (tag === "mg") mgRender(); else pageFocus(tag); }
+      } else if (!tag && page) {
+        var wasMg = page === "mg";
+        exitPage(true);
+        if (wasMg) kbdFocus(cw.track.querySelector(".card[data-k]") || $("heroPlay"));
+      }
+      navHighlight();
+      retFocus(navDepth());
+      // popped back to the clean home entry (sc marker consumed): auto scroll-to-top
+      if (!tag && !page && !modalItem && !searchMode && typeof markPushed !== "undefined" && markPushed &&
+          !/(\?|&)sc=1(&|$)/.test(location.search)) {
+        markPushed = false;
+        window.scrollTo(0, 0);
+        focusEl($("heroPlay"));
+        setTimeout(function () { if (!page && !modalItem && !searchMode) window.scrollTo(0, 0); }, 150);
+        setTimeout(function () { if (!page && !modalItem && !searchMode) window.scrollTo(0, 0); }, 450);
+      }
+    });
+    document.addEventListener("scroll", function () { schedulePump(); }, { capture: true, passive: true });   // detail page / horizontal rows: lazy images
+    var solid = false, tbHide = false, tbLastY = -1;
+    function topbarApply() {
+      var y = window.pageYOffset || 0;
+      $("topbar").className = "topbar" + (y > 40 ? " solid" : "") + (tbHide ? " hide" : "");
+      solid = y > 40;
+    }
+    function topbarShow() { if (tbHide) { tbHide = false; topbarApply(); } }
+    function topbarHideNow() { if (!tbHide) { tbHide = true; topbarApply(); } }
+    /* back-to-top marker: TV BACK runs native webView.goBack() only when the URL differs, so push a
+       sc=1 entry while scrolled down; popping back to the clean entry scrolls the home page to top. */
+    var markPushed = false, markLock = 0;
+    // WebView restore / direct load with the marker in the URL: re-arm so the next back still tops
+    if (/(\?|&)sc=1(&|$)/.test(location.search)) markPushed = true;
+    function scrollMark(y) {
+      try {
+        if (page || modalItem || searchMode || !$("qa").hidden || !$("cfm").hidden) return;
+        var has = /(\?|&)sc=1(&|$)/.test(location.search);
+        // one marker entry max; push only after it was consumed (markPushed false) and lock expired
+        if (y > 140 && !has && !markPushed && Date.now() - markLock > 900) {
+          markLock = Date.now();
+          history.pushState(null, "", location.pathname + (location.search ? location.search + "&" : "?") + "sc=1" + location.hash);
+          markPushed = true;
+        }
+      } catch (e) {}
+    }
+    function topbarSync() {
+      var y = window.pageYOffset || 0, dy = y - tbLastY;
+      tbLastY = y;
+      if (y <= 80) tbHide = false;             // near the top: always visible
+      else if (dy > 6) tbHide = true;          // scrolling down: gradient-solid then hide
+      else if (dy < -6) tbHide = false;        // scrolling up: bring it back
+      topbarApply();
+      scrollMark(y);
+    }
+    window.addEventListener("scroll", function () {
+      topbarSync();
+      var nearEnd = (window.pageYOffset || 0) + (window.innerHeight || 800) > document.documentElement.scrollHeight - 900;
+      if (nearEnd && CATS[page]) catMore();
+      if (nearEnd && searchMode) srMore();
+      schedulePump();
+    }, { passive: true });
+    window.addEventListener("resize", function () {
+      schedulePump();
+      if (!featured) return;
+      if (($("hero").className.indexOf("por") >= 0) !== portrait()) setHero(featured, $("heroTag").textContent);
+    });
+    window.addEventListener("fmviewport", function (e) { updateSafeAreaMode(e && e.detail ? e.detail : {}); });
+    var sdkReady = false;
+    function onSdk() {
+      root.classList.add("fm-native");
+      try { if (window.fongmiClient && window.fongmiClient.isLeanback) root.classList.add("tv"); } catch (e) {}
+      $("hint").hidden = true;
+      refreshSafeAreaMode();
+      if (sdkReady) setReady();
+      if (!sdkReady) { sdkReady = true; hydrateFromFm().then(function () { setReady(); loadLocal(); refreshHistory(); favUI(); }); }
+    }
+    window.addEventListener("fmsdk", onSdk);
+    window.addEventListener("fmresume", function () { refreshSafeAreaMode(); refreshHistory(); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshHistory(); });
+    function loadLocal() {
+      favLoad();
+      picLoad();
+      kvGet(MARK_KEY).then(function (s) { var o = jparse(s, {}); if (o && typeof o === "object") { MARKS = o; markAll(); } });
+      kvGet(CWH_KEY).then(function (s) { var o = jparse(s, {}); if (o && typeof o === "object") { CWH = o; renderCw(); placeHeart(); } });
+    }
+
+    /* ---------- home: TOP10 rows, 继续观看, Douban lists (deduplicated top-down) ---------- */
+    var HOME_SEEN = {};
+    var HOME_DEFS = [
+      { id: "top_tv", title: "今日剧集 TOP10", sub: "豆瓣实时热度", spec: { k: "col", id: "tv_real_time_hotest" }, rank: 1, cnt: 10, hero: "今日热门" },
+      { id: "cw", title: "继续观看" },
+      /* 我的收藏 row removed from home (2026-10-04): favourites live on the 收藏与历史 page */
+      { id: "hot_tv", title: "热门剧集", spec: { k: "hot", mt: "tv", cat: "tv", type: "tv" }, cnt: 30, paged: 1, hero: "热门剧集" },
+      { id: "top_movie", title: "今日电影 TOP10", sub: "豆瓣实时热度", spec: { k: "col", id: "movie_real_time_hotest" }, rank: 1, cnt: 10, hero: "今日热门" },
+      { id: "hot_movie", title: "热门电影", spec: { k: "hot", mt: "movie", cat: "热门", type: "全部" }, cnt: 30, paged: 1, hero: "热门电影" },
+      { id: "wk_cn", title: "华语口碑剧集", sub: "一周榜", spec: { k: "col", id: "tv_chinese_best_weekly" }, cnt: 10 },
+      { id: "wk_movie", title: "一周口碑电影", sub: "一周榜", spec: { k: "col", id: "movie_weekly_best" }, cnt: 10 },
+      { id: "show", title: "热门综艺", spec: { k: "hot", mt: "tv", cat: "show", type: "show" }, cnt: 30, paged: 1 },
+      { id: "anime", title: "新番动漫", spec: { k: "hot", mt: "tv", cat: "tv", type: "tv_animation" }, cnt: 30, paged: 1 },
+      { id: "wk_global", title: "全球口碑剧集", sub: "一周榜", spec: { k: "col", id: "tv_global_best_weekly" }, cnt: 10 },
+      { id: "high", title: "豆瓣高分电影", spec: { k: "hot", mt: "movie", cat: "豆瓣高分", type: "全部" }, cnt: 30, paged: 1 },
+      { id: "doc", title: "纪录片", spec: { k: "hot", mt: "tv", cat: "tv", type: "tv_documentary" }, cnt: 30, paged: 1, hero: "纪录片" }
+    ];
+    var cw = null, favRow = null;
+    for (var di = 0; di < HOME_DEFS.length; di += 1) {
+      var df = HOME_DEFS[di], rw = makeRow(df.id, df.title, df.sub);
+      rw.def = df;
+      if (df.id === "fav") {
+        favRow = rw;
+        rw.el.hidden = true;
+        rw.el.querySelector(".row-title").insertAdjacentHTML("beforeend", '<button type="button" class="rmng" id="favAll" data-go="fav">全部</button>');
+      }
+      if (df.id === "cw") {
+        cw = rw;
+        rw.el.hidden = true;
+        rw.el.querySelector(".row-title").insertAdjacentHTML("beforeend", '<button type="button" class="rmng" id="cwManage">管理</button>');
+      }
+    }
+    function focusMemo() {
+      var a = document.activeElement, k = a && a.getAttribute ? a.getAttribute("data-k") : null;
+      if (k === null || !ITEMS[Number(k)]) return null;
+      var r = a; while (r && !(r.getAttribute && r.getAttribute("data-row"))) r = r.parentNode;
+      return { row: r, id: mid(ITEMS[Number(k)]) };
+    }
+    function focusRestore(m) {
+      if (!m || !m.row || modalItem || !(isTV() || root.className.indexOf(" kbd") >= 0)) return;
+      var cs = m.row.querySelectorAll(".card[data-k]");
+      for (var i = 0; i < cs.length; i += 1) if (mid(ITEMS[Number(cs[i].getAttribute("data-k"))]) === m.id) { focusEl(cs[i]); return; }
+      if (cs.length) focusEl(cs[0]);
+    }
+    function homeRender() {
+      var memo = focusMemo();
+      for (var k in HOME_SEEN) delete HOME_SEEN[k];
+      for (var i = 0; i < ROW_ORDER.length; i += 1) {
+        var row = ROWS[ROW_ORDER[i]];
+        if (!row.def || !row.def.spec || !row.loaded) continue;
+        var list = [];
+        for (var j = 0; j < row.data.length; j += 1) {
+          var v = row.data[j];
+          if (row.def.rank) { if (list.length < 10) list.push(v); }
+          else if (!HOME_SEEN[v.id]) list.push(v);
+        }
+        if (!row.def.rank && list.length < 6 && row.data.length > list.length) list = row.data.slice();   // short weekly charts: keep the full chart
+        for (var q = 0; q < list.length; q += 1) HOME_SEEN[list[q].id] = 1;
+        var sig = list.map(function (x) { return x.id; }).join(",");
+        if (row.sig === sig) continue;   // unchanged: keep the DOM (no re-render of ~200 cards on every row load)
+        row.sig = sig;
+        row.seen = {};
+        fillRow(row, list, row.def.rank ? { rank: 1 } : null, false);
+      }
+      focusRestore(memo);
+    }
+    var homeT = 0;
+    function schedHome() { clearTimeout(homeT); homeT = setTimeout(homeRender, 60); }
+    function rowMore(row) {
+      if (row.busy || !row.def.paged || row.start >= Math.min(row.total, 150)) return;
+      row.busy = true;
+      var st = row.start;
+      dbList(row.def.spec, st, row.def.cnt).then(function (d) {
+        row.busy = false;
+        row.start = st + row.def.cnt;
+        if (!d.n) row.total = 0;
+        var add = [];
+        for (var i = 0; i < d.items.length; i += 1) { var v = d.items[i]; if (!HOME_SEEN[v.id] && !row.seen[v.id]) { HOME_SEEN[v.id] = 1; add.push(v); } }
+        row.data = row.data.concat(add);
+        fillRow(row, add, null, true);
+        if (row.start >= Math.min(row.total, 150)) { row.more = null; updateArrows(row); }
+      }).catch(function () { row.busy = false; });
+    }
+    var heroWait = 0, HERO_POOL = [], heroNext = null, heroNextAt = 0, heroStageT = 0, heroPoolStarted = false;
+    /* extra pre-cached lists so the hero draws from the whole catalog (repeatable random), not just a few rows */
+    var HERO_SPECS = [
+      { k: "hot", mt: "tv", cat: "tv", type: "tv" },
+      { k: "hot", mt: "movie", cat: "热门", type: "全部" },
+      { k: "hot", mt: "tv", cat: "tv", type: "tv_animation" },
+      { k: "hot", mt: "tv", cat: "tv", type: "tv_documentary" },
+      { k: "hot", mt: "tv", cat: "show", type: "show" },
+      { k: "col", id: "tv_real_time_hotest" },
+      { k: "col", id: "movie_real_time_hotest" },
+      { k: "col", id: "tv_chinese_best_weekly" },
+      { k: "col", id: "movie_weekly_best" }
+    ];
+    function heroAdd(list, tag) {
+      for (var i = 0; i < list.length; i += 1) {
+        var v = list[i];
+        if (v && v.pic && /\/p\d+\./.test(v.pic) && !HERO_POOL.some(function (x) { return x.v.id === v.id; })) HERO_POOL.push({ v: v, tag: tag });
+      }
+    }
+    function heroRand(pool) {   // uniform Math.random pick, stateless, O(1) — only avoids an immediate self-repeat
+      if (!pool || !pool.length) return null;
+      if (pool.length === 1) return pool[0];
+      var i = Math.floor(Math.random() * pool.length);
+      var x = pool[i], guard = 0;
+      while (x.v === featured && guard < 4) {
+        i = Math.floor(Math.random() * pool.length);
+        x = pool[i];
+        guard += 1;
+      }
+      if (x.v === featured) x = pool[(i + 1) % pool.length];
+      return x;
+    }
+    function heroPoolStart() {   // serially pull the extra lists (each one SWR-cached for 45 min / fm.cache snapshot)
+      if (heroPoolStarted) return;
+      heroPoolStarted = true;
+      var i = 0;
+      var step = function () {
+        if (i >= HERO_SPECS.length) { if (!featured) heroPick(); return; }
+        var spec = HERO_SPECS[i];
+        i += 1;
+        dbList(spec, 0, 50).then(function (d) { heroAdd(d.items, ""); step(); }).catch(function () { step(); });
+      };
+      step();
+    }
+    function heroStageNext(delay) {   // warm the NEXT pick's still so the crossfade never falls back to a poster
+      clearTimeout(heroStageT);
+      heroStageT = setTimeout(function () {
+        if (!HERO_POOL.length) return;
+        var p = HERO_POOL.filter(function (x) { return !MARKS[x.v.id] && x.v.rate >= 7 && (!featured || x.v !== featured); });
+        if (!p.length) p = HERO_POOL.filter(function (x) { return !featured || x.v !== featured; });
+        if (!p.length) return;
+        var cand = p[Math.floor(Math.random() * p.length)];
+        heroNext = cand; heroNextAt = Date.now();
+        dbStill(cand.v).catch(function () {});
+      }, delay);
+    }
+    function heroPick() {
+      if (featured || !HERO_POOL.length) return;
+      var fresh = HERO_POOL.filter(function (x) { return !MARKS[x.v.id]; }), base = fresh.length ? fresh : HERO_POOL;
+      var good = base.filter(function (x) { return x.v.rate >= 7.5; }), pool = good.length >= 3 ? good : base;
+      var x = heroRand(pool) || pool[0];
+      setHero(x.v, x.tag);
+      heroStageNext(7000);
+      heroRotate();
+    }
+    function loadRow(row) {
+      var df = row.def;
+      return dbList(df.spec, 0, df.cnt, function (d) {   // background refresh of a stale cached list
+        row.data = d.items; row.total = d.total || d.items.length;
+        if (df.hero) heroAdd(d.items, df.hero);
+        schedHome();
+      }).then(function (d) {
+        row.loaded = true;
+        row.data = d.items;
+        row.start = df.cnt;
+        row.total = d.total || d.items.length;
+        if (df.paged && row.start < Math.min(row.total, 150)) row.more = function () { rowMore(row); };
+        if (df.hero) heroAdd(d.items, df.hero);
+        schedHome();
+      }).catch(function () {
+        row.loaded = true; row.data = [];
+        row.track.innerHTML = '<div class="hint">' + esc(df.title) + " 加载失败</div>";
+        row.el.hidden = false;
+      }).then(function () {
+        if (df.hero) { heroWait -= 1; if (heroWait <= 0) heroPick(); }
+      });
+    }
+    function bootRows() {
+      var q = [];
+      for (var i = 0; i < ROW_ORDER.length; i += 1) { var r = ROWS[ROW_ORDER[i]]; if (r.def && r.def.spec) { q.push(r); if (r.def.hero) heroWait += 1; } }
+      var active = 0;
+      function next() {
+        while (active < 3 && q.length) {
+          active += 1;
+          loadRow(q.shift()).then(function () { active -= 1; next(); });
+        }
+      }
+      next();
+    }
+
+    /* ---------- boot ---------- */
+    refreshSafeAreaMode();
+    if (hasFm()) onSdk();
+    else setTimeout(function () { if (!READY) { setReady(); loadLocal(); } }, inApp() ? 4000 : 350);
+    (function () {   // cached lists render immediately (images wait for the SDK); otherwise wait for readiness
+      var d0 = HOME_DEFS[0];
+      if (lcGet("l2:" + specPath(d0.spec, 0, d0.cnt))) bootRows(); else whenReady(bootRows);
+    })();
+    heroPoolStart();   // widen the hero catalog in the background (SWR-cached, serial, gentle)
+    setTimeout(function () {
+      if (!hasFm()) {
+        var h = $("hint");
+        h.innerHTML = "<b>浏览模式</b>：可浏览片单与搜索。在 webhtv App 中把本配置设为首页即可「搜索播放」、显示「继续观看」。";
+        h.hidden = false;
+      }
+    }, 1500);
+    if (isTV()) setTimeout(function () { if (!document.activeElement || document.activeElement === document.body) focusEl($("heroPlay")); }, 300);
+    setTimeout(schedulePump, 50);
+  })();
+  </script>
+</body>
+</html>
